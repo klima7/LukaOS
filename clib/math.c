@@ -1,0 +1,25 @@
+#include "math.h"
+#include <stddef.h>
+#include <stdint.h>
+
+double pow(double val, unsigned int n)
+{
+    double result = 1;
+    for(unsigned int i=0; i<n; i++)
+        result*=val;
+    return result;
+}
+
+unsigned long long ullpow(unsigned long long val, unsigned int n)
+{
+    unsigned long long result = 1;
+    for(unsigned int i=0; i<n; i++)
+        result*=val;
+    return result;
+}
+
+double fabs(double val)
+{
+    return val>=0 ? val : -val;
+}
+
