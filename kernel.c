@@ -5,6 +5,8 @@
 #include "buffer.h"
 #include "terminal.h"
 #include "clock.h"
+#include "memory.h"
+#include "allocator.h"
 #include "clib/stdio.h"
 #include <stdbool.h>
 #include <stddef.h>
@@ -18,18 +20,30 @@ void kernel_main(void)
 	IDT_initialize();
 	keyboard_initialize();
 	clock_initialize();
+	memory_initialize();
+	allocator_initialize();
 	printf("Kernel ready\n");
 
-	//Demonstracja zegara
-	sleep(1000);
-	printf("\nOdliczanie... ");
-	sleep(1000);
-	printf("3 ");
-	sleep(1000);
-	printf("2 ");
-	sleep(1000);
-	printf("1 \n");
-	sleep(1000);
+	printf("\n");
+	report_memory();
+	
+	printf("\n");
+	debug_display_memory();
+
+	printf("\n");
+	int *block1 = kcalloc(654304ull);
+	printf("kalloc1 = %u\n", (uint32_t)block1);
+	int *block2 = kcalloc(100);
+	printf("kalloc2 = %u\n", (uint32_t)block2);
+
+	printf("\n");
+	debug_display_memory();
+
+	kfree(block1);
+	kfree(block2);
+
+	printf("\n");
+	debug_display_memory();
 
 	//Wyświetlanie wpisywanych znaków
 	printf("\nYou can write >> ");
