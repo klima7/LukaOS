@@ -1,5 +1,13 @@
-#ifndef MULTIBOOT_HEADER
-#define MULTIBOOT_HEADER 1
+#ifndef __MULTIBOOT_H__
+#define __MULTIBOOT_H__
+
+// Prototypy
+void multiboot_initialize(void);
+struct multiboot_info *multiboot_get_info(void);
+void multiboot_debug_report_memory(void);
+
+// Procedura assemblerowa
+extern unsigned int get_multibot_info(void);
 
 // Plik znaleziony w dokumentacji multiboot
 // https://www.gnu.org/software/grub/manual/multiboot/html_node/multiboot_002eh.html

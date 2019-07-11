@@ -6,6 +6,6 @@
 double pow(double val, unsigned int n);
 unsigned long long ullpow(unsigned long long val, unsigned int n);
 double fabs(double val);
-int printf(char* sheme, ...);
+int ceil(double val);
 
 #endif

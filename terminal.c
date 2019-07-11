@@ -1,15 +1,21 @@
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 #include "terminal.h"
 #include "kernel.h"
 #include "clib/string.h"
 #include "clib/stdio.h"
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
 
 //Funkcje statyczne
 static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg);
 static inline uint16_t vga_entry(unsigned char uc, uint8_t color);
 static void terminal_autoscroll();
+
+//Zmienne terminalu
+size_t terminal_row;
+size_t terminal_column;
+uint8_t terminal_color;
+uint16_t* terminal_buffer;
 
 //Tworzy wpis koloru 4B kolor 4B tlo
 static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg) 
@@ -100,15 +106,9 @@ static void terminal_autoscroll()
     terminal_row--;
 }
  
-//Drukuje napis o podanej danej dlugosci
-void terminal_write(const char* data, size_t size) 
-{
-	for (size_t i = 0; i < size; i++)
-		terminal_putchar(data[i]);
-}
- 
-//Drukuje napis bez podawanie dlugosci
+//Drukuje napis w terminalu
 void terminal_writestring(const char* data) 
 {
-	terminal_write(data, strlen(data));
+	for (; *data != 0; data++)
+		terminal_putchar(*data);
 }

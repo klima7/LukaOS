@@ -1,10 +1,10 @@
+#include <stddef.h>
+#include <stdint.h>
 #include "idt.h"
 #include "ports.h"
 #include "clock.h"
 #include "keyboard.h"
 #include "clib/stdio.h"
-#include <stddef.h>
-#include <stdint.h>
 
 // Funkcje statyczne
 static void set_IDT_entry(struct IDT_entry *entry, uint32_t offset, uint16_t selector, uint8_t type);

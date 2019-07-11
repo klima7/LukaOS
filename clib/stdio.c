@@ -1,10 +1,10 @@
+#include <stddef.h>
+#include <stdint.h>
+#include <stdarg.h>
 #include "stdio.h"
 #include "../terminal.h"
 #include "string.h"
 #include "math.h"
-#include <stddef.h>
-#include <stdint.h>
-#include <stdarg.h>
 
 //Funkcje statyczne
 static int get_int_len(int val);

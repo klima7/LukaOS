@@ -1,7 +1,10 @@
-#include "clock.h"
-#include "clib/stdio.h"
 #include <stddef.h>
 #include <stdint.h>
+#include "clock.h"
+#include "clib/stdio.h"
+
+//Funkcje statyczne
+static void set_frequency(unsigned int f);
 
 volatile unsigned long long ticks = 0;
 volatile double system_time_ms = 0;
@@ -16,7 +19,7 @@ void clock_initialize(void)
 }
 
 // Ustala zadaną częstotliwość
-void set_frequency(unsigned int f)
+static void set_frequency(unsigned int f)
 {
     unsigned short divider = (unsigned short)(1193182.0 / f);
     IRQ0_frequency = 1193182.0 / divider;

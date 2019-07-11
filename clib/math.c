@@ -1,6 +1,6 @@
-#include "math.h"
 #include <stddef.h>
 #include <stdint.h>
+#include "math.h"
 
 double pow(double val, unsigned int n)
 {
@@ -23,3 +23,19 @@ double fabs(double val)
     return val>=0 ? val : -val;
 }
 
+int ceil(double val)
+{
+    if(val > 0)
+    {
+        int x = (int)val;
+        if(val - x == 0) return x;
+        else return x+1;
+    }
+
+    else
+    {
+        int x = (int)val;
+        return x;
+    }
+    
+}

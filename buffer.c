@@ -1,6 +1,6 @@
-#include "buffer.h"
 #include <stddef.h>
 #include <stdint.h>
+#include "buffer.h"
 
 // Inicjuje bufor
 void buffer_initialize(struct buffer_t *buff)

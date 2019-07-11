@@ -33,7 +33,19 @@ idtr:
 .word 0
 .long 0
 
+// Adres struktury multiboot
+multiboot_info:
+.long 0
+
 .text
+
+// Zwraca adres struktury multiboot_info
+// Wywoływane z poziomu C - unsigned int get_multibot_info(void)
+.global get_multibot_info
+.type get_multibot_info, @function
+get_multibot_info:
+	movl multiboot_info, %eax
+	ret
 
 // Ładuje rozmiar i adres globalnej tablicy deskryptorów do rejestru GDTR
 // Wywoływane z poziomu C - set_GDT(GDT, sizeof(GDT)-1)
@@ -144,6 +156,7 @@ enter_protection_mode:
 .global _start
 .type _start, @function			
 _start:
+	mov %ebx, multiboot_info
 	cli 									// Wyłącza przerwania
 	call enter_protection_mode		// Procesor przechodzi w tryb chroniony
 	mov $stack_top, %esp		  		// Umieszcza adres stosu w rejestrze wskaźnika stosu - ESP

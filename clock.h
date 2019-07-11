@@ -9,7 +9,6 @@
 
 // Prototypy
 void clock_initialize(void);
-void set_frequency(unsigned int f);
 void clock_interrupt_handler(void);
 void sleep(unsigned long long t);
 unsigned long long clock(void);
