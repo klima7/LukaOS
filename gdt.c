@@ -8,10 +8,40 @@ void GDT_initialize(void)
 {
     // Inicjuje struktury reprezentujące segmenty
     printf("Creating GDT Table\n");
-	segments[0] = (struct segment) { .base=0, .limit=0,          .access=0,    .flags=0x4 };         // Niedostępny fragmęt pamięci, NULL
-	segments[1] = (struct segment) { .base=0, .limit=0xFFFFFFFF, .access=0x9A, .flags=0xC };         // Obszar pamięci na kod, wykonywalny, nie można zapisywać
-	segments[2] = (struct segment) { .base=0, .limit=0xFFFFFFFF, .access=0x92, .flags=0xC };         // Obszar pamięci na dane, nie można wykonywać, możne zapisywać i odczytywać
-	segments[3] = (struct segment) { .base=0, .limit=0,          .access=0,    .flags=0x4 }; 	     // Obszar na przyszlość, dla wielozadaniowości
+
+    // Segment niewykorzystywany
+	segments[0] = (struct segment_t) 
+    { 
+        .base = 0, .limit = 0,          
+        .access = 0,                                                                                         
+        .flags = FLAGS_32BIT_MODE         
+    };  
+
+    // Segment kodu
+	segments[1] = (struct segment_t) 
+    { .base = 0, 
+    .limit = 0xFFFFFFFF, 
+    .access = ACCESS_PRESENT | ACCESS_RING0 | ACCESS_CD_SEGMENT | ACCESS_EXECUTABLE | ACCESS_READ_WRITE, 
+    .flags = FLAGS_32BIT_MODE | FLAGS_4KB_GRANULARITY 
+    };  
+
+    // Segment danych
+	segments[2] = (struct segment_t) 
+    { 
+        .base = 0, 
+        .limit = 0xFFFFFFFF, 
+        .access = ACCESS_PRESENT | ACCESS_RING0 | ACCESS_CD_SEGMENT | ACCESS_EXECUTABLE | ACCESS_READ_WRITE, 
+        .flags = FLAGS_32BIT_MODE | FLAGS_4KB_GRANULARITY 
+    }; 
+
+    // TSS w przyszłości
+	segments[3] = (struct segment_t) 
+    { 
+        .base = 0, 
+        .limit = 0,          
+        .access = 0,                                                                                         
+        .flags = FLAGS_32BIT_MODE                         
+    }; 
 
     // Tworzy Globalną tablice deskryptorów w oparciu o segmenty
     for(int i=0; i<GDT_SIZE; i++)
@@ -27,19 +57,19 @@ void GDT_initialize(void)
 }
 
 //Zamienia strukture segmentu na wpis w tablicy GDT
-void encode_GDT_entry(struct gdt_entry *target, struct segment *source)
+void encode_GDT_entry(struct gdt_entry_t *target, struct segment_t *source)
 {
     // Ustawienie flag
     target->flags = source->flags;
  
     //Zakodowanie limitu sektora
     target->limit_low  = source->limit & 0x0000FFFF;
-    target->limit_high = source->limit & 0x00FF0000;
+    target->limit_high = (source->limit & 0x000F0000) >> 16;
  
     //Zakodowanie offsetu sektora
     target->base_low = source->base & 0x0000FFFF;
-    target->base_middle = source->base & 0x00FF0000;
-    target->base_high = source->base & 0xFF000000;
+    target->base_middle = (source->base & 0x00FF0000) >> 16;
+    target->base_high = (source->base & 0xFF000000) >> 24;
  
     //Zakodowanie praw dostępu sektora
     target->access = source->access;

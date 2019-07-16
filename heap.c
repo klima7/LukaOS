@@ -1,17 +1,17 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "heap.h"
-#include "pagemap.h"
+#include "memory_map.h"
 #include "multiboot.h"
 #include "clib/stdio.h"
 #include "clib/math.h"
 
 // Prototypy funkcji statycznych
-static HEADER *take_new_pages(uint32_t size);
-static void return_free_pages(HEADER *block);
-static HEADER *memory_join(HEADER *block);
-static HEADER *memory_split(HEADER *block, uint32_t size);
-static HEADER *create_header_at(uint32_t address, struct mem_header *prev, struct mem_header *next, uint32_t size, int state);
+static MEMORY_BLOCK_HEADER *take_new_pages(uint32_t size);
+static void return_free_pages(MEMORY_BLOCK_HEADER *block);
+static MEMORY_BLOCK_HEADER *memory_join(MEMORY_BLOCK_HEADER *block);
+static MEMORY_BLOCK_HEADER *memory_split(MEMORY_BLOCK_HEADER *block, uint32_t size);
+static MEMORY_BLOCK_HEADER *create_header_at(uint32_t address, MEMORY_BLOCK_HEADER *prev, MEMORY_BLOCK_HEADER *next, uint32_t size, int state);
 
 // Lista zawierająca wszystkie zaalokowany i puste bloki pamięci
 struct mem_list mem_list;
@@ -28,8 +28,8 @@ void heap_initialize(void)
 // Alokuje obszar pamięci na size bajtów i zwraca jego adres
 void *__kmalloc(uint32_t size, const char *filename, uint32_t line)
 {   
-    HEADER *current = mem_list.head;
-    HEADER *found = NULL;
+    MEMORY_BLOCK_HEADER *current = mem_list.head;
+    MEMORY_BLOCK_HEADER *found = NULL;
 
     // Szuka wolnego bloku o dobrym rozmiarze
     for(uint32_t i=0; i<mem_list.size; i++)
@@ -72,7 +72,7 @@ void *__krealloc(void *old_ptr, uint32_t new_size, const char *filename, uint32_
     if(old_ptr == NULL) 
         return __kmalloc(new_size, filename, line);
 
-    HEADER *old_block = (HEADER*)old_ptr;
+    MEMORY_BLOCK_HEADER *old_block = (MEMORY_BLOCK_HEADER*)old_ptr;
     old_block--;
 
     // Nie rób nic, aktualny rozmiar jest wystarczający
@@ -95,7 +95,7 @@ void *__krealloc(void *old_ptr, uint32_t new_size, const char *filename, uint32_
 // Zwalnia zaalokowany wcześniej blok
 void kfree(void *ptr)
 {
-    HEADER *block = (HEADER*)ptr;
+    MEMORY_BLOCK_HEADER *block = (MEMORY_BLOCK_HEADER*)ptr;
     block--;
 
     if(block->state != USED) return;
@@ -113,7 +113,7 @@ void kfree(void *ptr)
 // Debugowanie, wyświetla liste bloków pamięci
 void debug_display_heap(void)
 {
-    HEADER *current = mem_list.head;
+    MEMORY_BLOCK_HEADER *current = mem_list.head;
 
     printf("| BEGIN          | LEN            | TYPE           | FILE           | LINE\n");
     for(uint32_t i=0; i<mem_list.size; i++)
@@ -135,9 +135,9 @@ void debug_display_heap(void)
 }
 
 // Tworzy nagłówek bloku pamięci w danym miejscu o podanych parametrach
-static HEADER *create_header_at(uint32_t address, struct mem_header *prev, struct mem_header *next, uint32_t size, int state)
+static MEMORY_BLOCK_HEADER *create_header_at(uint32_t address, MEMORY_BLOCK_HEADER *prev, MEMORY_BLOCK_HEADER *next, uint32_t size, int state)
 {
-    struct mem_header *header = (HEADER*)address;
+    MEMORY_BLOCK_HEADER *header = (MEMORY_BLOCK_HEADER*)address;
     header->prev_block = prev;
     header->next_block = next;
     header->size = size;
@@ -146,13 +146,13 @@ static HEADER *create_header_at(uint32_t address, struct mem_header *prev, struc
 }
 
 // Dzieli blok pamięci na dwa, tak aby pierwszy z nich miał size bajtów i zwraca adres pierwszego z nich
-static HEADER *memory_split(HEADER *block, uint32_t size)
+static MEMORY_BLOCK_HEADER *memory_split(MEMORY_BLOCK_HEADER *block, uint32_t size)
 {
     if(block->size <= HSIZE || block->state != FREE)
         return NULL;
 
-    uint32_t new_header_address = (uint32_t)block + sizeof(struct mem_header) + size;
-    HEADER *new_block = create_header_at(new_header_address, block, block->next_block, block->size - size - HSIZE, FREE);
+    uint32_t new_header_address = (uint32_t)block + sizeof(MEMORY_BLOCK_HEADER) + size;
+    MEMORY_BLOCK_HEADER *new_block = create_header_at(new_header_address, block, block->next_block, block->size - size - HSIZE, FREE);
 
     if(block == mem_list.tail) mem_list.tail = new_block;
     else block->next_block->prev_block = new_block;
@@ -166,7 +166,7 @@ static HEADER *memory_split(HEADER *block, uint32_t size)
 }
 
 // Łączy podany blok z blokiem następnym i zwraca adres połączonego bloku
-static HEADER *memory_join(HEADER *block)
+static MEMORY_BLOCK_HEADER *memory_join(MEMORY_BLOCK_HEADER *block)
 {
     if(block == mem_list.tail || block->state != FREE || block->next_block->state != FREE) return NULL;
 
@@ -184,12 +184,14 @@ static HEADER *memory_join(HEADER *block)
 }
 
 // Przydziela stercie nowe strony na minimum size bajtów, tworzy na nich wolny blok, dołącza na koniec listy i zwraca
-static HEADER *take_new_pages(uint32_t size)
+static MEMORY_BLOCK_HEADER *take_new_pages(uint32_t size)
 {
-        uint32_t pages_count = ceil((double)(size+HSIZE)/PAGE_SIZE);
+        uint32_t pages_count = (size + HSIZE) / PAGE_SIZE;
+        pages_count += ((size + HSIZE) % PAGE_SIZE) > 0;
+
         uint32_t page_addr = page_claim(pages_count);
 
-        HEADER *new_header = create_header_at(page_addr, mem_list.tail, NULL, pages_count*PAGE_SIZE-HSIZE, FREE);
+        MEMORY_BLOCK_HEADER *new_header = create_header_at(page_addr, mem_list.tail, NULL, pages_count*PAGE_SIZE-HSIZE, FREE);
 
         if(mem_list.size == 0) mem_list.head = new_header;
         else mem_list.tail->next_block = new_header;
@@ -201,7 +203,7 @@ static HEADER *take_new_pages(uint32_t size)
 }
 
 // Jeśli przekazany blok pamięci jest pusty i zajmuję całą stronę to dana strona jest zwalniana
-static void return_free_pages(HEADER *block)
+static void return_free_pages(MEMORY_BLOCK_HEADER *block)
 {
     uint32_t page_start = (uint32_t)block;
     if((uint32_t)block % PAGE_SIZE != 0) page_start = (uint32_t)block + PAGE_SIZE - (uint32_t)block % PAGE_SIZE;

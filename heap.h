@@ -4,31 +4,31 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HSIZE sizeof(HEADER)
+#define HSIZE sizeof(MEMORY_BLOCK_HEADER)
 
 // Czy blok pamięci jest wolny, czy zajęty
 enum mem_state { FREE, USED };
 
 // Nagłówek znajdujący się przed każdym blokiem pamięci - węzeł listy
-struct mem_header
+struct memory_block_header_t
 {
     uint32_t size;
     enum mem_state state;
-    struct mem_header *next_block;
-    struct mem_header *prev_block;
+    struct memory_block_header_t *next_block;
+    struct memory_block_header_t *prev_block;
 
     // Dodatkowe pola, ułatwiające debugowanie
     const char *filename;
     uint32_t line;
 };
 
-typedef struct mem_header HEADER;
+typedef struct memory_block_header_t MEMORY_BLOCK_HEADER;
 
 // Lista zawierająca bloki pamięci
 struct mem_list
 {
-    HEADER *head;
-    HEADER *tail;
+    MEMORY_BLOCK_HEADER *head;
+    MEMORY_BLOCK_HEADER *tail;
     uint32_t size;
 };
 

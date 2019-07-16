@@ -146,7 +146,7 @@ set_PIT_count:
 // Ustawiamy bit PE - pierwszy bit w rejestrze CR0
 // Wyłącza to adresowanie płaskie i umożliwia mechanizmy takie jak stronicowanie i segmentacja
 .type enter_protection_mode, @function
-enter_protection_mode:
+enter_protected_mode:
 	mov	%cr0, %eax
 	or	$0x01, %eax
 	mov	%eax, %cr0
@@ -157,152 +157,40 @@ enter_protection_mode:
 .type _start, @function			
 _start:
 	mov %ebx, multiboot_info
-	cli 									// Wyłącza przerwania
-	call enter_protection_mode		// Procesor przechodzi w tryb chroniony
-	mov $stack_top, %esp		  		// Umieszcza adres stosu w rejestrze wskaźnika stosu - ESP
-	call kernel_main			   	// Wywołuje funkcje kernel_main()
+	cli 									
+	call enter_protected_mode		
+	mov $stack_top, %esp		  		
+	call kernel_main			   
 			
-1:	hlt     				  				// Czeka na nadejście przerwania
-	jmp 1b								// Nieskończona pętla
+1:	hlt     				  			
+	jmp 1b							
  
 .size _start, . - _start		
 
-// Zewnętrzn procedury obsługi przerwań
-// Umieszczone w pliku idt.c
-.extern IRQ00_handler
-.extern IRQ01_handler
-.extern IRQ02_handler
-.extern IRQ03_handler
-.extern IRQ04_handler
-.extern IRQ05_handler
-.extern IRQ06_handler
-.extern IRQ07_handler
-.extern IRQ08_handler
-.extern IRQ09_handler
-.extern IRQ10_handler
-.extern IRQ11_handler
-.extern IRQ12_handler
-.extern IRQ13_handler
-.extern IRQ14_handler
-.extern IRQ15_handler
 
-// Udostępnianie funkcji przerwań dla C
-// Ich adresy sa potrzebne do stworzenia tablicy IDT w pliku idt.c
-.global IRQ00
-.global IRQ01
-.global IRQ02
-.global IRQ03
-.global IRQ04
-.global IRQ05
-.global IRQ06
-.global IRQ07
-.global IRQ08
-.global IRQ09
-.global IRQ10
-.global IRQ11
-.global IRQ12
-.global IRQ13
-.global IRQ14
-.global IRQ15
 
-// Procedury obsługi przerwań 
-// Najpierw umieszczają na stosie zawartości rejestrów ogólnego przeznaczenia
-// Wywołują odpowiednią funkcję C i przewracają poprzedni stan rejestrów
-IRQ00:
-  pusha
-  call IRQ00_handler
-  popa
-  iret
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  
-IRQ01:
-  pusha
-  call IRQ01_handler
-  popa
-  iret
- 
-IRQ02:
-  pusha
-  call IRQ02_handler
-  popa
-  iret
- 
-IRQ03:
-  pusha
-  call IRQ03_handler
-  popa
-  iret
- 
-IRQ04:
-  pusha
-  call IRQ04_handler
-  popa
-  iret
- 
-IRQ05:
-  pusha
-  call IRQ05_handler
-  popa
-  iret
- 
-IRQ06:
-  pusha
-  call IRQ06_handler
-  popa
-  iret
- 
-IRQ07:
-  pusha
-  call IRQ07_handler
-  popa
-  iret
- 
-IRQ08:
-  pusha
-  call IRQ08_handler
-  popa
-  iret
- 
-IRQ09:
-  pusha
-  call IRQ09_handler
-  popa
-  iret
- 
-IRQ10:
-  pusha
-  call IRQ10_handler
-  popa
-  iret
- 
-IRQ11:
-  pusha
-  call IRQ11_handler
-  popa
-  iret
- 
-IRQ12:
-  pusha
-  call IRQ12_handler
-  popa
-  iret
- 
-IRQ13:
-  pusha
-  call IRQ13_handler
-  popa
-  iret
- 
-IRQ14:
-  pusha
-  call IRQ14_handler
-  popa
-  iret
- 
-IRQ15:
-  pusha
-  call IRQ15_handler
-  popa
-  iret
 
 
 

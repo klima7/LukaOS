@@ -23,8 +23,8 @@ void multiboot_initialize(void)
     }
 }
 
-// Zwraca adres struktury multiboot info
-struct multiboot_info *multiboot_get_info(void)
+// Zwraca wskaźnika na strukturę multiboot info
+struct multiboot_info *multiboot_get_struct(void)
 {
     return multiboot_info;
 }

@@ -7,7 +7,8 @@
 #define VK_RIGHT_SHIFT 0x36
 #define VK_SPACE 0x07
 #define VK_CAPS_LOCK 0x3A
-#define VK_NUM_LOCK 0x45
+#define VK_SCROLL_LOCK 0x46
+#define VK_NUMBER_LOCK 0x45
 #define VK_ALT 0x36
 #define VK_TAB 0x24
 #define VK_PAGE_UP 0x49
@@ -19,13 +20,21 @@
 #define VK_ENTER 0x1C
 #define VK_BACKSPACE 0x0E
 
+// Możliwe opóżnienia powtarzania klawiszy
+#define DELAY_250 0x1
+#define DELAY_500 0x2
+#define DELAY_750 0x3
+#define DELAY_1000 0x4
+
+// Przykładowe częstotliwości powtarzania
+// Polegją na zmapowaniu 0x00-0x1F na 30Hz-2Hz
+#define REPEAT_RATE_2HZ 0x1F
+
 // Zamienia kod naciśnięcia na kod zwolnienia klawisza
-#define RELEASE(_X) ((_X)+128)
+#define RELEASED(_X) ((uint8_t)(_X) | 0x80)
 
 // Prototypy
 void keyboard_initialize(void);
-int keyboard_is_letter(unsigned char c);
-int keyboard_is_printable(unsigned char c);
 struct buffer_t *keyboard_get_buffer(void);
 void keyboard_interrupt_handler(void);
 

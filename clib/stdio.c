@@ -19,12 +19,14 @@ static int display_hex(unsigned long long number, int bits);
 void putchar(char c)
 {
     terminal_putchar(c);
+	terminal_cursor_apply();
 }
 
 //Drukuje napis na standardowym wyjściu
 void puts(const char *s)
 {
     terminal_writestring(s);
+	terminal_cursor_apply();
 }
 
 //Zwraca dlugosc liczby ze znakiem
@@ -67,7 +69,7 @@ static int display_int(int val, int limit)
 
 	if (val < 0)
 	{
-		putchar('-');
+		terminal_putchar('-');
 		length++;
 	}
 
@@ -77,7 +79,7 @@ static int display_int(int val, int limit)
 	{
 		int digit = abs / weight;
 		abs -= digit * weight;
-		putchar('0' + digit);
+		terminal_putchar('0' + digit);
 		length++;
 		weight /= 10;
 
@@ -96,7 +98,7 @@ static int display_float(double val)
 	//Czesc calkowita
 	int a = (int)val;
 	len += display_int(a, -1);
-	putchar('.');
+	terminal_putchar('.');
 	len++;
 
 	double r = val - a;
@@ -109,7 +111,7 @@ static int display_float(double val)
 
 	for (int i = 0; i < zero_before; i++)
 	{
-		putchar('0');
+		terminal_putchar('0');
 		len++;
 	}
 
@@ -120,7 +122,7 @@ static int display_float(double val)
 	//Zera po
 	for (int i = 0; i < zero_after; i++)
 	{
-		putchar('0');
+		terminal_putchar('0');
 		len++;
 	}
 
@@ -140,7 +142,7 @@ static int display_ull(unsigned long long val)
 	{
 		unsigned long long digit = val / weight;
 		val -= digit * weight;
-		putchar('0' + digit);
+		terminal_putchar('0' + digit);
 		length++;
 		weight /= 10;
 	}
@@ -157,11 +159,11 @@ static int display_binary(unsigned long long number, int bits)
 	{
 		unsigned long long mask = 1ull << (bits-1-i);
 		int bit = !(!(mask & number));
-		putchar('0'+bit);
+		terminal_putchar('0'+bit);
 		len++;
 		if ((i + 1) % 8 == 0) 
 		{
-			putchar(' ');
+			terminal_putchar(' ');
 			len++;
 		}
 	}
@@ -181,9 +183,9 @@ static int display_hex(unsigned long long number, int bits)
 		unsigned long long result = number & mask;
 		result >>= i;
 		if(result >=10)
-			putchar('A'+result-10);
+			terminal_putchar('A'+result-10);
 		else 
-			putchar('0'+result);
+			terminal_putchar('0'+result);
 		len++;
 		mask >>= 4;
 	}
@@ -205,7 +207,7 @@ int printf(char* sheme, ...)
 	{
 		if (*sheme != '%')
 		{
-			putchar(*sheme);
+			terminal_putchar(*sheme);
 			success++;
 		}
 		else
@@ -236,7 +238,7 @@ int printf(char* sheme, ...)
 			else if (*sheme == 'c')
 			{
 				char c = (char)va_arg(lista, int);
-				putchar(c);
+				terminal_putchar(c);
 				success += 1;
 			}
 			else if (*sheme == 'u')
@@ -300,6 +302,8 @@ int printf(char* sheme, ...)
 	}
 
 	va_end(lista);
+
+	terminal_cursor_apply();
 	return success;
 }
 

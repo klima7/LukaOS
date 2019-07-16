@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "clock.h"
+#include "idt.h"
 #include "clib/stdio.h"
 
 //Funkcje statyczne
@@ -14,8 +15,10 @@ double  IRQ0_frequency = 0;
 // Inicjuje zegar
 void clock_initialize(void)
 {
-    printf("Clock Initialization\n");
     set_frequency(FREQUENCY);
+    interrupt_register(32, clock_interrupt_handler);
+
+    printf("Clock Ticking\n");
 }
 
 // Ustala zadaną częstotliwość

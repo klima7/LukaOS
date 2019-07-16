@@ -5,10 +5,20 @@
 #include <stdint.h>
 
 #define CODE_SELECTOR 0x08
-// TYPE = 1000 1110 ( present | type )
-// present = 1000 (valid)
-// type = 1110 (interrupt gate)
 #define TYPE 0x8E
+
+#define MAX_HANDLERS_COUNT 16
+#define INTS_COUNT 48
+
+// Wskaźnik na funkcję obsługi przerwania
+typedef void(*HANDLER_FUN)(void);
+
+// Struktura opisująca zbiór funkcji obsługujących dane przerwanie
+struct handlers_list
+{
+	uint32_t count;
+	HANDLER_FUN funs[MAX_HANDLERS_COUNT];
+};
 
 // Pojedyńczy wpis w tablicy deskryptorów przerwań
 struct IDT_entry{
@@ -19,51 +29,25 @@ struct IDT_entry{
 	uint16_t offset_higherbits;
 };
 
-// Tablica deskryptorów przerwań
-struct IDT_entry IDT[256];
+// Prototypy
+void IDT_initialize(void);
+void interrupt_register(uint32_t interrupt_nr, HANDLER_FUN fun);
+void interrupt_handler(uint32_t nr);
 
+// Funkcje zewnętrzne
 extern void set_IDT(uint32_t a, uint16_t b);
 
-void IDT_initialize(void);
-void IRQ_end_notify(unsigned int nr);
-
-void enable_interrupts(void);
-void disable_interrupts(void);
-
-// Procedury obsługi przerwań assemblera
-// Potrzebujemy ich adresów
-extern int IRQ00(void);
-extern int IRQ01(void);
-extern int IRQ02(void);
-extern int IRQ03(void);
-extern int IRQ04(void);
-extern int IRQ05(void);
-extern int IRQ06(void);
-extern int IRQ07(void);
-extern int IRQ08(void);
-extern int IRQ09(void);
-extern int IRQ10(void);
-extern int IRQ11(void);
-extern int IRQ12(void);
-extern int IRQ13(void);
-extern int IRQ14(void);
-extern int IRQ15(void);
-
-void IRQ00_handler(void);
-void IRQ01_handler(void);
-void IRQ02_handler(void);
-void IRQ03_handler(void);
-void IRQ04_handler(void);
-void IRQ05_handler(void);
-void IRQ06_handler(void);
-void IRQ07_handler(void);
-void IRQ08_handler(void);
-void IRQ09_handler(void);
-void IRQ10_handler(void);
-void IRQ11_handler(void);
-void IRQ12_handler(void);
-void IRQ13_handler(void);
-void IRQ14_handler(void);
-void IRQ15_handler(void);
+extern void int0(void);  extern void int1(void);  extern void int2(void);  extern void int3(void); 
+extern void int4(void);  extern void int5(void);  extern void int6(void);  extern void int7(void); 
+extern void int8(void);  extern void int9(void);  extern void int10(void); extern void int11(void); 
+extern void int12(void); extern void int13(void); extern void int14(void); extern void int15(void); 
+extern void int16(void); extern void int17(void); extern void int18(void); extern void int19(void); 
+extern void int20(void); extern void int21(void); extern void int22(void); extern void int23(void); 
+extern void int24(void); extern void int25(void); extern void int26(void); extern void int27(void); 
+extern void int28(void); extern void int29(void); extern void int30(void); extern void int31(void); 
+extern void int32(void); extern void int33(void); extern void int34(void); extern void int35(void); 
+extern void int36(void); extern void int37(void); extern void int38(void); extern void int39(void); 
+extern void int40(void); extern void int41(void); extern void int42(void); extern void int43(void); 
+extern void int44(void); extern void int45(void); extern void int46(void); extern void int47(void); 
 
 #endif

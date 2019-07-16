@@ -3,13 +3,21 @@
 #include "keyboard.h"
 #include "ports.h"
 #include "buffer.h"
+#include "ps2.h"
+#include "idt.h"
 #include "clib/stdio.h"
 
 #define NOSHIFT_CODE 0
 #define SHIFT_CODE 1
 
+// Funkcje statyczne
+static int keyboard_is_printable(unsigned char c);
+static char convert_scancode_to_ascii(unsigned char c, int shift);
+static void keyboard_set_led(int ScrollLock, int NumberLock, int CapsLock);
+static void keyboard_set_typematic(unsigned int rate, unsigned int delay);
+
 //Tabela służąca do zamiany kodów skaningowych na kody ascii
-unsigned char translation_table[0xFF][2] = {
+unsigned char translation_table[0x100][2] = {
     [0x1E] = {'a', 'A'}, [0x30] = {'b', 'B'}, [0x2E] = {'c', 'C'} , [0x20] = {'d', 'D'}, [0x12] = {'e', 'E'},
     [0x21] = {'f', 'F'}, [0x22] = {'g', 'G'}, [0x23] = {'h', 'H'} , [0x17] = {'i', 'I'}, [0x24] = {'j', 'J'},
     [0x25] = {'k', 'K'}, [0x26] = {'l', 'L'}, [0x32] = {'m', 'M'} , [0x31] = {'n', 'N'}, [0x18] = {'o', 'O'},
@@ -26,10 +34,12 @@ unsigned char translation_table[0xFF][2] = {
 };
 
 // Flagi mówiące czy któryś z tych klawiszy jest wciśnięty
-int lshift_mode = 0;
-int rshift_mode = 0;
-int capslock_mode = 0;
-int numlock_mode = 0;
+int lshift_flag = 0;
+int rshift_flag = 0;
+
+int capslock_flag = 0;
+int numlock_flag = 0;
+int scrolllock_flag = 0;
 
 // Stan "Automatu"
 int state = 0;
@@ -40,25 +50,40 @@ struct buffer_t keyboard_buffer;
 // Inicjalizacja klawiatury
 void keyboard_initialize(void)
 {
-    printf("Keyboard Initialization\n");
     buffer_initialize(&keyboard_buffer);
-}
 
-// Sprawdza czy podany kod skaningowy odpowiada klawiszowi który da się wydrukować
-int keyboard_is_printable(unsigned char c)
-{
-    if(translation_table[c][0]!=0) return 1;
-    return 0;
-}
+    asm("cli");
 
-// Zamienia kod skaningowy na kod ascii
-char convert_scancode_to_ascii(unsigned char c, int shift)
-{
-    if(shift)
-        return translation_table[c][SHIFT_CODE];
+    // Wyłączamy urządzeń, żeby nie przeszkadzały w konfiguracji
+    ps2_write_command(COMMAND_DISABLE_FIRST_PORT);
+    ps2_write_command(COMMAND_DISABLE_SECOND_PORT);
+
+    // Włączenie przerwania klawiatury - chociaż zazwyczaj jest już włączone
+    uint8_t config_byte = ps2_get_config_byte();
+    config_byte |= CONFIG_FIRST_PORT_INTERRUPT;
+    ps2_set_config_byte(config_byte);
+
+    // Zmiana częstotliwości powtarzania klawiszy
+    keyboard_set_typematic(REPEAT_RATE_2HZ, DELAY_500);
+
+    // Wykonanie testu klawiatury
+    ps2_write_command(COMMAND_TEST_FIRST_PORT);
+    uint8_t test_result = ps2_read_data();
+    if(test_result ==  DEVICE_TEST_PASSED) printf("PS2 Keyboard Test Passed\n");
     else
-        return translation_table[c][NOSHIFT_CODE];
-    return 0;
+    {
+        printf("PS2 Keyboard Test Failed\n");
+        // Kernel Panic
+    }
+
+    // Włączenie urządzeń po skończeniu konfiguracji
+    ps2_write_command(COMMAND_ENABLE_FIRST_PORT);
+    ps2_write_command(COMMAND_ENABLE_SECOND_PORT);
+    
+    asm("sti");
+
+    interrupt_register(33, keyboard_interrupt_handler);
+    printf("Keyboard ready\n");
 }
 
 // Zwraca bufor klawiatury
@@ -71,7 +96,7 @@ struct buffer_t *keyboard_get_buffer(void)
 void keyboard_interrupt_handler(void)
 {
     // Odczytuje kod skaningowy z buforu
-    unsigned char scancode = inportb(0x60);
+    unsigned char scancode = inportb(PS2_DATA_PORT);
 
     // Sekwencja kodów, zakładamy max 2
     if(scancode == VK_EXTRA_CODE)
@@ -89,22 +114,28 @@ void keyboard_interrupt_handler(void)
     {
         // Aktualizuję flagi klawiszy specialnych
         if(scancode == VK_LEFT_SHIFT)
-            lshift_mode = 1;
-        else if(scancode == RELEASE(VK_LEFT_SHIFT))
-            lshift_mode = 0;
+            lshift_flag = 1;
+        else if(scancode == RELEASED(VK_LEFT_SHIFT))
+            lshift_flag = 0;
         else if(scancode == VK_RIGHT_SHIFT)
-            rshift_mode = 1;
-        else if(scancode == RELEASE(VK_RIGHT_SHIFT))
-            rshift_mode = 0;
+            rshift_flag = 1;
+        else if(scancode == RELEASED(VK_RIGHT_SHIFT))
+            rshift_flag = 0;
         else if(scancode == VK_CAPS_LOCK)
-            capslock_mode = !capslock_mode;
-        else if(scancode == VK_NUM_LOCK)
-            numlock_mode = !numlock_mode;
+            capslock_flag = !capslock_flag;
+        else if(scancode == VK_NUMBER_LOCK)
+            numlock_flag = !numlock_flag;
+        else if(scancode == VK_SCROLL_LOCK)
+            scrolllock_flag = !scrolllock_flag;
+
+        // Aktualizuje diody LED
+        if(scancode == VK_CAPS_LOCK || scancode == VK_NUMBER_LOCK || scancode == VK_SCROLL_LOCK)
+            keyboard_set_led(scrolllock_flag, numlock_flag, capslock_flag);
 
         // Umieszczanie w buforze drukowalnych znaków
         if(keyboard_is_printable(scancode))
         {
-            char character = convert_scancode_to_ascii(scancode, lshift_mode | rshift_mode | capslock_mode);
+            char character = convert_scancode_to_ascii(scancode, lshift_flag | rshift_flag | capslock_flag);
             buffer_put(&keyboard_buffer, character);
         }
 
@@ -113,4 +144,41 @@ void keyboard_interrupt_handler(void)
     }
 }
 
+// Ustawia szybkość i opóźnienie powtarzania klawiszy
+// Funkcja nie daje efektu, chociaż kontroler potwierdza wykonanie. Zakładam, że to wina systemu hosta, który na to nie pozwala.
+static void keyboard_set_typematic(unsigned int rate, unsigned int delay)
+{
+    uint8_t typematic_byte = rate || delay << 4;
+
+    ps2_write_command(COMMAND_KB_SET_TYPEMATIC);
+    ps2_write_data(typematic_byte);
+    uint8_t byte = ps2_read_data();
+}
+
+// Steruje diodami LED - zakładam że działa, w laptopie nie mam diód 
+static void keyboard_set_led(int ScrollLock, int NumberLock, int CapsLock)
+{
+    uint8_t led_byte = ScrollLock | NumberLock << 1 | CapsLock << 2;
+
+    ps2_write_command(COMMAND_KB_SET_LED);
+    ps2_write_data(led_byte);
+    ps2_read_data();
+}
+
+// Sprawdza czy podany kod skaningowy odpowiada klawiszowi który da się wydrukować
+static int keyboard_is_printable(unsigned char c)
+{
+    if(translation_table[c][0]!=0) return 1;
+    return 0;
+}
+
+// Zamienia kod skaningowy na kod ascii
+static char convert_scancode_to_ascii(unsigned char c, int shift)
+{
+    if(shift)
+        return translation_table[c][SHIFT_CODE];
+    else
+        return translation_table[c][NOSHIFT_CODE];
+    return 0;
+}
 
