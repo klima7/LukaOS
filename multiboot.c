@@ -1,6 +1,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "multiboot.h"
+#include "sys.h"
+#include "terminal.h"
 #include "clib/stdio.h"
 #include "clib/string.h"
 
@@ -16,11 +18,7 @@ void multiboot_initialize(void)
 
     // Jeżeli bit jest ustawiony to mapa jest poprawna
     uint32_t flags = multiboot_info->flags;
-    if((flags & (1u << 6)) == 0)
-    {
-        // Mamy problem
-        printf("Memory Detection Failed\n");
-    }
+    if((flags & (1u << 6)) == 0) kernel_panic("Memory Detection Failed\n");
 }
 
 // Zwraca wskaźnika na strukturę multiboot info
@@ -32,9 +30,12 @@ struct multiboot_info *multiboot_get_struct(void)
 // Wyświetla informacje o dostępnej pamięci
 void multiboot_debug_report_memory(void)
 {
+    uint8_t last_color = terminal_getcolor();
+    terminal_setcolor(VGA_COLOR_WHITE);
     unsigned int count = multiboot_info->mmap_length / sizeof(struct multiboot_mmap_entry);
     struct multiboot_mmap_entry *entry = (struct multiboot_mmap_entry *)multiboot_info->mmap_addr;
-    printf("MEM Begin      MEM End        MEM Type\n");
+    printf("\nMEM Begin      MEM End        MEM Type\n");
+    terminal_setcolor(VGA_COLOR_LIGHT_GREY);
     for(unsigned int i=0; i<count; i++)
     {
         int count = printf("%llu", entry->addr);
@@ -49,5 +50,6 @@ void multiboot_debug_report_memory(void)
         else if(type==MULTIBOOT_MEMORY_BADRAM) printf("Badram\n");
         entry++;
     }
+    terminal_setcolor(last_color);
 }
 

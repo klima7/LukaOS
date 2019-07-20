@@ -1,6 +1,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "heap.h"
+#include "terminal.h"
+#include "sys.h"
 #include "memory_map.h"
 #include "multiboot.h"
 #include "clib/stdio.h"
@@ -98,13 +100,23 @@ void kfree(void *ptr)
     MEMORY_BLOCK_HEADER *block = (MEMORY_BLOCK_HEADER*)ptr;
     block--;
 
-    if(block->state != USED) return;
+    if(block->state != USED)
+    {
+        report_error("Memory Already Free\n");
+        return;
+    }
 
     block->state = FREE;
 
     // Łączy powstały pusty blok z sąsiednimi
-    if(block != mem_list.tail && block->next_block->state == FREE) block = memory_join(block);
-    if(block != mem_list.head && block->prev_block->state == FREE) block = memory_join(block->prev_block);
+    MEMORY_BLOCK_HEADER *connect1 = NULL;
+    if(block != mem_list.tail && block->next_block->state == FREE) connect1 = memory_join(block);
+    if(connect1!=NULL) block = connect1;
+
+    // Łączy powstały pusty blok z sąsiednimi
+    MEMORY_BLOCK_HEADER *connect2 = NULL;
+    if(block != mem_list.head && block->prev_block->state == FREE) connect2 = memory_join(block->prev_block);
+    if(connect2!=NULL) block = connect2;
 
     // Zwraca stronę jeśli stała się pusta
     return_free_pages(block);
@@ -115,7 +127,10 @@ void debug_display_heap(void)
 {
     MEMORY_BLOCK_HEADER *current = mem_list.head;
 
+    uint8_t last_color = terminal_getcolor();
+    terminal_setcolor(VGA_COLOR_WHITE);
     printf("| BEGIN          | LEN            | TYPE           | FILE           | LINE\n");
+    terminal_setcolor(VGA_COLOR_LIGHT_GREY);
     for(uint32_t i=0; i<mem_list.size; i++)
     {
         int count = printf("| %u", (unsigned int)current);
@@ -132,6 +147,7 @@ void debug_display_heap(void)
         else count = printf("| \n");
         current = current->next_block;
     }
+    terminal_setcolor(last_color);
 }
 
 // Tworzy nagłówek bloku pamięci w danym miejscu o podanych parametrach
@@ -210,7 +226,7 @@ static void return_free_pages(MEMORY_BLOCK_HEADER *block)
     uint32_t block_end = (uint32_t)block + block->size + HSIZE;
     uint32_t len = block_end - page_start;
 
-    if(len >= PAGE_SIZE) 
+    if(len >= PAGE_SIZE && block_end > page_start) // len jest unsigned! więc trzeba się upewnić
     {
         if((uint32_t)block < page_start) block = memory_split(block, page_start - (uint32_t)block - HSIZE)->next_block;
         if(block == mem_list.head) mem_list.head = block->next_block;

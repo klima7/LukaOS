@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "clib/stdio.h"
+#include "sys.h"
 #include "ps2.h"
 #include "acpi.h"
 #include "ports.h"
@@ -12,11 +13,7 @@ static int ps2_check_controller_work(void);
 // Inicjuje kontroler PS2 - sprawdza, czy jest dostępny i działa
 void ps2_initialize(void)
 {
-    if(!ps2_check_controller_exist() || !ps2_check_controller_work())
-    {
-        printf("Problem with PS2 Controller\n");
-        // Kernel Panic
-    }
+    if(!ps2_check_controller_exist() || !ps2_check_controller_work()) kernel_panic("Problem With PS2 Controller");
     else printf("PS2 Controller Ready\n");
 }
 

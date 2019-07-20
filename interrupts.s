@@ -1,4 +1,5 @@
 .extern interrupt_handler
+.extern swap
 
 // Przerwania wewnętrzne
 .global int0;  int0:  pushal; pushl $0;  call interrupt_handler; addl $0x04, %esp; popal; iret
@@ -52,5 +53,26 @@
 .global int45;  int45: pushal; pushl $45; call interrupt_handler; addl $0x04, %esp; popal; iret
 .global int46;  int46: pushal; pushl $46; call interrupt_handler; addl $0x04, %esp; popal; iret
 .global int47;  int47: pushal; pushl $47; call interrupt_handler; addl $0x04, %esp; popal; iret
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

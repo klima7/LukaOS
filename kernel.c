@@ -14,6 +14,10 @@
 #include "mouse.h"
 #include "pic.h"
 #include "ps2.h"
+#include "threads.h"
+#include "list.h"
+#include "test.h"
+#include "sys.h"
 #include "clib/stdio.h"
 #include "clib/string.h"
 
@@ -32,6 +36,7 @@ static void kernel_init(void)
 	multiboot_initialize();
 	memorymap_initialize();
 	heap_initialize();
+	threads_initialize();
 	printf("Kernel ready\n");
 }
 
@@ -40,13 +45,13 @@ void kernel_main(void)
 {
 	kernel_init();
 
-	sleep(1000);
-	struct buffer_t *keyboard_buffer = keyboard_get_buffer();
-	printf("\nYou can write >> ");
-	while(1)
-	{
-		if(!buffer_isempty(keyboard_buffer))
-			putchar(buffer_get(keyboard_buffer));
-	}
+	printf("\n");
+	debug_display_heap();
+
+	// Uruchomiene programu
+	test_main();
+
+	printf("\n");
+	debug_display_heap();
 }
 

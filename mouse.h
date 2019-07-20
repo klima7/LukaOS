@@ -25,6 +25,11 @@
 #define WHEEL_SCROLL_UP 0x1
 #define WHEEL_SCROLL_DOWN 0xF
 
+// Możliwe wartości bajta id
+#define MOUSE_ID_STANDARD 1
+#define MOUSE_ID_WHEEL 3
+#define MOUSE_ID_EXTRA_BUTTONS 4
+
 // Struktura reprezentująca aktualny stan myszki
 struct mouse_t
 {

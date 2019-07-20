@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "memory_map.h"
 #include "multiboot.h"
+#include "sys.h"
 #include "clib/stdio.h"
 
 // Funkcje statyczne
@@ -84,13 +85,14 @@ uint32_t page_claim(uint32_t count)
         }
     }
 
+    kernel_panic("Unable To Find Free Pages");
     return 0;
 }
 
 // Debugowanie - wyświetl wszystkie storony o stanie USED
 void debug_display_used_pages(void)
 {
-    printf("Used pages: ");
+    printf("\nUsed pages: ");
     for(uint32_t i=0; i<PAGE_COUNT; i++)
     {
         if(page_get_from_index(i)==PAGE_USED)
@@ -102,6 +104,8 @@ void debug_display_used_pages(void)
 // Ustala stan strony o podanym numerze
 static void page_set_from_index(uint32_t nr, uint32_t state)
 {
+    if(nr>=PAGE_COUNT) kernel_panic("Invalid Page Number");
+
     uint32_t byte = nr / PAGE_PER_STATUS_BYTE;
     uint32_t part = nr % PAGE_PER_STATUS_BYTE;
 
@@ -118,6 +122,8 @@ static void page_set_from_index(uint32_t nr, uint32_t state)
 // Zwraca stan strony o podanym numerze
 static uint32_t page_get_from_index(uint32_t nr)
 {
+    if(nr>=PAGE_COUNT) kernel_panic("Invalid Page Number");
+
     uint32_t byte = nr / PAGE_PER_STATUS_BYTE;
     uint32_t part = nr % PAGE_PER_STATUS_BYTE;
 

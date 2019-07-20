@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <stdint.h>
+#include "sys.h"
 #include "acpi.h"
 #include "clib/stdio.h"
 #include "clib/string.h"
@@ -22,7 +23,7 @@ void acpi_initialize(void)
     // Szukanie struktury RSDP
     rsdp = find_RSDP();
     if(rsdp) printf("RSDP Found\n");
-    else printf("Unable To Find RSDP\n");
+    else kernel_panic("Unable To Find RSDP\n");
 
     // Sprawdzenie czy struktura jest poprawna
     int check = RSDP_veryfi(rsdp);
@@ -31,7 +32,7 @@ void acpi_initialize(void)
         if(rsdp->first_part.revision == ACPI10 )printf("ACPI 1.0 Verified\n");
         else if(rsdp->first_part.revision == ACPI20 )printf("ACPI 2.0 Verified\n");
     }
-    else printf("RSDP Veryfication Failed\n");
+    else kernel_panic("RSDP Veryfication Failed\n");
 
     // W zależności od wersji ACPI wybiera inny adres
     if(rsdp->first_part.revision == ACPI10) rsdt = (struct ACPISDT_header *)rsdp->first_part.rsdt_address;
@@ -39,7 +40,7 @@ void acpi_initialize(void)
 
     check = RSDT_veryfi(rsdt);
     if(check) printf("RSDT Verified\n");
-    else printf("RSDT Verification Failed\n");
+    else kernel_panic("RSDT Verification Failed\n");
 }
 
 // Szuka tabeli o podanej sygnaturze w tablicy RSDT

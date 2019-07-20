@@ -29,6 +29,24 @@ void puts(const char *s)
 	terminal_cursor_apply();
 }
 
+// Wyświetla napis na środku konsoli
+void display_center(const char *str)
+{
+	uint32_t spaces = VGA_WIDTH/2 - strlen(str)/2;
+	for(uint32_t i=0; i<spaces; i++) printf(" ");
+	puts(str);
+	puts("\n");
+}
+
+// Wyświetla napis wyrównany do prawej strony
+void display_right(const char *str)
+{
+	uint32_t spaces = VGA_WIDTH - strlen(str);
+	for(uint32_t i=0; i<spaces; i++);
+	puts(str);
+	puts("\n");
+}
+
 //Zwraca dlugosc liczby ze znakiem
 static int get_int_len(int val)
 {

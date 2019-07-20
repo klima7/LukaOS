@@ -187,6 +187,12 @@ void terminal_setcolor(uint8_t color)
 {
 	terminal_color = color;
 }
+
+// Zwraca aktualny kolor tła i tekstu
+uint8_t terminal_getcolor(void)
+{
+	return terminal_color;
+}
  
 // Umieszcza znak na danej pozycji w danym buforze
 static inline void terminal_put_entry_at(uint16_t*base, char c, uint8_t color, size_t x, size_t y) 

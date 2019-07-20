@@ -5,6 +5,7 @@
 #include "ports.h"
 #include "ps2.h"
 #include "idt.h"
+#include "sys.h"
 #include "terminal.h"
 #include "clib/stdio.h"
 
@@ -35,7 +36,10 @@ void mouse_initialize(void)
 
     // Włączenie dodatkowych przycisków
     mouse_init_scroll_wheel();
+    if(mouse_get_id_byte() != MOUSE_ID_WHEEL) report_error("Unable To Init Scroll Wheel");
     mouse_init_extra_buttons();
+    if(mouse_get_id_byte() != MOUSE_ID_EXTRA_BUTTONS) report_error("Unable To Init Extra Buttons");
+
 
     // Włączenie automatycznej transmisji pakietów
     mouse_send_data(COMMAND_MOUSE_ENABLE_STREAMING);
@@ -44,11 +48,7 @@ void mouse_initialize(void)
     ps2_write_command(COMMAND_TEST_SECOND_PORT);
     uint8_t test_result = ps2_read_data();
     if(test_result ==  DEVICE_TEST_PASSED) printf("PS2 Mouse Test Passed\n");
-    else
-    {
-        printf("PS2 Mouse Test Failed\n");
-        // Kernel Panic
-    }
+    else report_error("PS2 Mouse Test Failed\n");
 
     // Włączenie urządzeń po skończeniu konfiguracji
     ps2_write_command(COMMAND_ENABLE_FIRST_PORT);

@@ -5,6 +5,7 @@
 #include "buffer.h"
 #include "ps2.h"
 #include "idt.h"
+#include "sys.h"
 #include "clib/stdio.h"
 
 #define NOSHIFT_CODE 0
@@ -70,11 +71,7 @@ void keyboard_initialize(void)
     ps2_write_command(COMMAND_TEST_FIRST_PORT);
     uint8_t test_result = ps2_read_data();
     if(test_result ==  DEVICE_TEST_PASSED) printf("PS2 Keyboard Test Passed\n");
-    else
-    {
-        printf("PS2 Keyboard Test Failed\n");
-        // Kernel Panic
-    }
+    else report_error("PS2 Keyboard Test Failed");
 
     // Włączenie urządzeń po skończeniu konfiguracji
     ps2_write_command(COMMAND_ENABLE_FIRST_PORT);
