@@ -6,23 +6,21 @@
 #include "string.h"
 #include "math.h"
 
-//Funkcje statyczne
-static int get_int_len(int val);
-static int get_ull_len(unsigned long long val);
+// Funkcje statyczne
 static int display_int(int val, int limit);
 static int display_float(double val);
 static int display_ull(unsigned long long val);
 static int display_binary(unsigned long long number, int bits);
 static int display_hex(unsigned long long number, int bits);
 
-//Drukuje znak na standardowym wyjściu
+// Drukuje znak na standardowym wyjściu
 void putchar(char c)
 {
     terminal_putchar(c);
 	terminal_cursor_apply();
 }
 
-//Drukuje napis na standardowym wyjściu
+// Drukuje napis na standardowym wyjściu
 void puts(const char *s)
 {
     terminal_writestring(s);
@@ -47,37 +45,7 @@ void display_right(const char *str)
 	puts("\n");
 }
 
-//Zwraca dlugosc liczby ze znakiem
-static int get_int_len(int val)
-{
-	if (val == 0) return 1;
-	if (val == 10) return 2;
-
-	int len = 0;
-	while (val != 0)
-	{
-		len++;
-		val /= 10;
-	}
-	return len;
-}
-
-//Zwraca dlugosc liczby bez znaku
-static int get_ull_len(unsigned long long val)
-{
-	if (val == 0) return 1;
-	if (val == 10) return 2;
-
-	int len = 0;
-	while (val != 0)
-	{
-		len++;
-		val /= 10;
-	}
-	return len;
-}
-
-//Wyswietla liczbe ze znakiem
+// Wyswietla liczbe ze znakiem
 static int display_int(int val, int limit)
 {
 	int length = 0;
@@ -108,12 +76,12 @@ static int display_int(int val, int limit)
 	return length;
 }
 
-//Wyświetla liczbe zmiennoprzecinkową
+// Wyświetla liczbe zmiennoprzecinkową
 static int display_float(double val)
 {
 	int len = 0;
 
-	//Czesc calkowita
+	// Czesc calkowita
 	int a = (int)val;
 	len += display_int(a, -1);
 	terminal_putchar('.');
@@ -122,7 +90,7 @@ static int display_float(double val)
 	double r = val - a;
 	int b = (int)fabs((int)(r * 1000000));
 
-	//Zera przed
+	// Zera przed
 	int len_temp = get_int_len(b);
 	int zero_before = 5 - len_temp;
 	if (zero_before < 0) zero_before = 0;
@@ -137,7 +105,7 @@ static int display_float(double val)
 	int zero_after = 5 - zero_before - len_temp;
 	len += len_temp;
 
-	//Zera po
+	// Zera po
 	for (int i = 0; i < zero_after; i++)
 	{
 		terminal_putchar('0');
@@ -147,7 +115,7 @@ static int display_float(double val)
 	return len;
 }
 
-//Wyświetla liczbe bez znaku
+// Wyświetla liczbe bez znaku
 static int display_ull(unsigned long long val)
 {
 	int length = 0;
@@ -168,7 +136,7 @@ static int display_ull(unsigned long long val)
 	return length;
 }
 
-//Wyświetla liczbe w postaci binarnej
+// Wyświetla liczbe w postaci binarnej
 static int display_binary(unsigned long long number, int bits)
 {
 	int len = 0;
@@ -189,7 +157,7 @@ static int display_binary(unsigned long long number, int bits)
 	return len;
 }
 
-//Wyświetla liczbe w postaci szesnastkowej
+// Wyświetla liczbe w postaci szesnastkowej
 static int display_hex(unsigned long long number, int bits)
 {
 	int len = 0;
@@ -211,7 +179,7 @@ static int display_hex(unsigned long long number, int bits)
 	return len;
 }
 
-//Wyswietla sformatowany napis
+// Wyswietla sformatowany napis
 int printf(char* sheme, ...)
 {
 	if (sheme == NULL) return 0;

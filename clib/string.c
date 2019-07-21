@@ -51,3 +51,56 @@ int strncmp(const char *str1, const char *str2, size_t size)
 	}
 	return 0;
 }
+
+// Dodaje do napisu dest n znaków z napisu source
+char *strncat(char *dest, const char *source, size_t n)
+{
+	uint32_t len = strlen(dest);
+	dest += len;
+
+	for(uint32_t i=0; i<n; i++)
+	{
+		*dest = *source;
+		if(source == 0) return dest;
+		dest++; source++;
+	}
+
+	return dest;
+}
+
+// Dodaje na koniec napisu dest napis source
+char *strcat(char *dest, const char *source)
+{
+	uint32_t len = strlen(source);
+	return strncat(dest, source, len+1);
+}
+
+// Zwraca dlugosc liczby ze znakiem
+int get_int_len(int val)
+{
+	if (val == 0) return 1;
+	if (val == 10) return 2;
+
+	int len = 0;
+	while (val != 0)
+	{
+		len++;
+		val /= 10;
+	}
+	return len;
+}
+
+// Zwraca dlugosc liczby bez znaku
+int get_ull_len(unsigned long long val)
+{
+	if (val == 0) return 1;
+	if (val == 10) return 2;
+
+	int len = 0;
+	while (val != 0)
+	{
+		len++;
+		val /= 10;
+	}
+	return len;
+}

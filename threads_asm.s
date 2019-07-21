@@ -23,14 +23,14 @@ switch_stacks_and_jump:
 	mov %esp, 0(%eax)
 
 	mov 40(%esp), %eax
-    mov 0(%eax), %esp
+   mov 0(%eax), %esp
 	mov 8(%eax), %eax
 
 	sti
 
-    jmp *%eax
+   jmp *%eax
 
-    // Nie powinno tu wracać
+   // Nie powinno tu wracać
     
 
 switch_stacks:
@@ -48,19 +48,19 @@ switch_stacks:
 	pushl %edi
 	pushl %ebp
 
-    mov 36(%esp), %eax
+   mov 36(%esp), %eax
 	mov %esp, 0(%eax)
 
 	mov 40(%esp), %eax
-    mov 0(%eax), %esp
+   mov 0(%eax), %esp
 
 	popl %ebp
-    popl %edi
-    popl %esi
-    popl %edx
-    popl %ecx
-    popl %ebx
-    popl %eax
+   popl %edi
+   popl %esi
+   popl %edx
+   popl %ecx
+   popl %ebx
+   popl %eax
 	popf
 
 	sti

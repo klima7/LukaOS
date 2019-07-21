@@ -18,6 +18,9 @@
 #include "list.h"
 #include "test.h"
 #include "sys.h"
+#include "cmos.h"
+#include "time.h"
+#include "rng.h"
 #include "clib/stdio.h"
 #include "clib/string.h"
 
@@ -37,6 +40,7 @@ static void kernel_init(void)
 	memorymap_initialize();
 	heap_initialize();
 	threads_initialize();
+	time_initialize();
 	printf("Kernel ready\n");
 }
 
@@ -44,12 +48,6 @@ static void kernel_init(void)
 void kernel_main(void) 
 {
 	kernel_init();
-
-	printf("\n");
-	debug_display_heap();
-
-	// Uruchomiene programu
-	test_main();
 
 	printf("\n");
 	debug_display_heap();

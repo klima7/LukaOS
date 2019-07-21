@@ -6,6 +6,7 @@
 #include "idt.h"
 #include "pic.h"
 #include "clock.h"
+#include "sys.h"
 #include "clib/stdio.h"
 
 // Wszystkie wątki dostępne według kategorii
@@ -257,6 +258,7 @@ static NODE *find_node_from_id(LIST *l, uint32_t id)
         current = current->next;
     }
 
+    kernel_panic("Any Free Threads ID");
     return NULL;
 }
 

@@ -90,7 +90,7 @@ struct FADT
     uint8_t  DutyWidth;
     uint8_t  DayAlarm;
     uint8_t  MonthAlarm;
-    uint8_t  Century;
+    uint8_t  Century;              // Adres  rejestru CMOS zawierającego wiek
  
     // ACPI 2
     uint16_t BootArchitectureFlags;
