@@ -6,6 +6,7 @@
 // Sprawdza, czy procesor obsługuje polecenie rdrand
 .type check_true_rng, @function
 check_true_rng:
+
     pushl %ecx
 
     mov $0x1, %eax
@@ -21,7 +22,19 @@ check_true_rng:
 // Zwraca prawdziwie losową liczbę
 .type generate_true_numer, @function
 generate_true_numer:
-    rdrand %eax
-    ret
+
+    mov $0x100, %ecx  
+
+    retry:
+        rdrand %eax
+        jnc .done     
+        loop retry
+
+    .fail:
+        mov $0x0, %eax
+        ret
+
+    .done:
+        ret
 
 
