@@ -8,7 +8,7 @@
 //Stała wielkość terminalu
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
-#define SCROLL_HEIGHT 256
+#define SCROLL_HEIGHT 2000
 
 // Adres bufora terminalu
 #define TERMINAL_ADDRESS 0xB8000
@@ -52,6 +52,8 @@ uint8_t terminal_getcolor(void);
 void terminal_putchar(char c);
 void terminal_writestring(const char* data);
 void terminal_clear(void);
+void terminal_fake_clear(void);
+void terminal_undo_char(uint32_t count);
 
 void terminal_disable_cursor();
 void terminal_enable_cursor(uint8_t cursor_start, uint8_t cursor_end);

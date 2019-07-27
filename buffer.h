@@ -2,7 +2,7 @@
 #define __BUFFER_H__
 
 // Rozmiar buforu
-#define BUFFER_SIZE 255
+#define BUFFER_SIZE 1024
 
 // Ile znaków można bezpiecznie zwrócić 
 #define UNGET_COUNT 2

@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include "stdio.h"
+#include "../keyboard.h"
+#include "../buffer.h"
 #include "../terminal.h"
 #include "string.h"
 #include "math.h"
@@ -12,6 +14,57 @@ static int display_float(double val);
 static int display_ull(unsigned long long val);
 static int display_binary(unsigned long long number, int bits);
 static int display_hex(unsigned long long number, int bits);
+
+// Pobiera max len znaków od użytkownika
+void gets(char *str, uint32_t len)
+{
+	uint32_t cur_len = 0;
+	struct buffer_t *keyboard_buffer = keyboard_get_buffer();
+
+	while(1)
+	{
+		if(!buffer_isempty(keyboard_buffer))
+		{
+			char c = buffer_get(keyboard_buffer);
+			//printf("[%c]", c);
+
+			// Backspace
+			if(c == '\b' && cur_len > 0) 
+			{
+				terminal_undo_char(1);
+				cur_len--;
+			}
+
+			// Enter
+			else if(c == '\n')
+			{
+				putchar('\n');
+				*(str+cur_len) = 0;
+				return;
+			}
+
+			// Zwykły znak
+			else if(c != '\b' && cur_len < len-1)
+			{
+				putchar(c);
+				*(str+cur_len) = c;
+				cur_len++;
+			}
+		}
+	}
+}
+
+// Symuluje wpisywanie z klawiatury przez użytkownika przekazanego tekstu
+void simulate_typing(char *text)
+{
+	struct buffer_t *kb_buffer = keyboard_get_buffer();
+
+	while(*text!=0)
+	{
+		buffer_put(kb_buffer, *text);
+		text++;
+	}
+}
 
 // Drukuje znak na standardowym wyjściu
 void putchar(char c)

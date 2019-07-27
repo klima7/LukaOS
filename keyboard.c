@@ -6,18 +6,24 @@
 #include "ps2.h"
 #include "idt.h"
 #include "sys.h"
+#include "heap.h"
+#include "uni_list.h"
 #include "clib/stdio.h"
 
-#define NOSHIFT_CODE 0
-#define SHIFT_CODE 1
+// Funkcje list_kblistener_create, list_kblistener_push_front...
+UNI_LIST(kblistener, kb_listener_t)
 
 // Funkcje statyczne
 static int keyboard_is_printable(unsigned char c);
 static char convert_scancode_to_ascii(unsigned char c, int shift);
 static void keyboard_set_led(int ScrollLock, int NumberLock, int CapsLock);
 static void keyboard_set_typematic(unsigned int rate, unsigned int delay);
+static void notify_listeners_about_scancode(uint8_t scancode, int extra);
 
-//Tabela służąca do zamiany kodów skaningowych na kody ascii
+#define NOSHIFT_CODE 0
+#define SHIFT_CODE 1
+
+// Tabela służąca do zamiany kodów skaningowych na kody ascii
 unsigned char translation_table[0x100][2] = {
     [0x1E] = {'a', 'A'}, [0x30] = {'b', 'B'}, [0x2E] = {'c', 'C'} , [0x20] = {'d', 'D'}, [0x12] = {'e', 'E'},
     [0x21] = {'f', 'F'}, [0x22] = {'g', 'G'}, [0x23] = {'h', 'H'} , [0x17] = {'i', 'I'}, [0x24] = {'j', 'J'},
@@ -33,6 +39,10 @@ unsigned char translation_table[0x100][2] = {
     [0x1B] = {']', '}'}, [0x27] = {';', ':'}, [0x28] = {'\'', '"'}, [0x2B] = {'\\', '|'}, [0x33] = {',', '<'},
     [0x53] = {',', ','}
 };
+
+// tablice słuchaczy zdarzeń
+struct list_kblistener_t *kblisteners_with_extra[0x100] = { NULL };
+struct list_kblistener_t *kblisteners_without_extra[0x100] = { NULL };
 
 // Flagi mówiące czy któryś z tych klawiszy jest wciśnięty
 int lshift_flag = 0;
@@ -102,11 +112,14 @@ void keyboard_interrupt_handler(void)
         return;
     }
 
+    // Kody dwuskładnikowe
     if(state)
     {
         state = 0;
+        notify_listeners_about_scancode(scancode, 1);
     }
 
+    // Kody jednoskładnikowe
     else
     {
         // Aktualizuję flagi klawiszy specialnych
@@ -138,6 +151,11 @@ void keyboard_interrupt_handler(void)
 
         if(scancode == VK_ENTER)
             buffer_put(&keyboard_buffer, '\n');
+
+        if(scancode == VK_BACKSPACE)
+            buffer_put(&keyboard_buffer, '\b');
+
+        notify_listeners_about_scancode(scancode, 0);
     }
 }
 
@@ -179,3 +197,61 @@ static char convert_scancode_to_ascii(unsigned char c, int shift)
     return 0;
 }
 
+// Wywołuje wszystkie funkcje związane z danym przyciskiem
+static void notify_listeners_about_scancode(uint8_t scancode, int extra)
+{
+    struct list_kblistener_t *list = NULL;
+    if(extra) list = kblisteners_with_extra[scancode];
+    else list = kblisteners_without_extra[scancode];
+    if(list == NULL) return;
+    
+    struct node_kblistener_t *current = list->head;
+
+    while(current!=NULL)
+    {
+        kb_listener_t listener = current->data;
+        listener();
+        current = current->next;
+    }
+}
+
+// Funkcja dodaje nowego słuchacza czekającego na scancode
+void keyboard_register_listener(uint8_t scancode, int extra, kb_listener_t listener)
+{
+    // Wybiera odpowiednią liste
+    struct list_kblistener_t **list = NULL;
+    if(extra) list = &kblisteners_with_extra[scancode];
+    else list = &kblisteners_without_extra[scancode];
+
+    // Do kodu nie ma przypisanych jeszcz zdarzeń
+    if(*list == NULL)
+    {
+        *list = list_kblistener_create();
+        list_kblistener_push_back(*list, listener);
+    }
+
+    // Do kodu jest już przypisane jakieś zdarzenie
+    else
+        list_kblistener_push_back(*list, listener);
+}
+
+// Funkcja usówa słuchacza 
+void keyboard_unregister_listener(uint8_t scancode, int extra, kb_listener_t listener)
+{
+    // Wybiera odpowiednią liste
+    struct list_kblistener_t *list = NULL;
+    if(extra) list = kblisteners_with_extra[scancode];
+    else list = kblisteners_without_extra[scancode];
+
+    struct node_kblistener_t *current = list->head;
+
+    while(current!=NULL)
+    {
+        if(current->data == listener)
+        {
+            list_kblistener_remove_node(list, current);
+            if(list->size==0) list = NULL;
+        }
+        current = current->next;
+    }
+}

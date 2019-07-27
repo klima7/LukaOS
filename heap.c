@@ -5,6 +5,7 @@
 #include "sys.h"
 #include "memory_map.h"
 #include "multiboot.h"
+#include "shell.h"
 #include "clib/stdio.h"
 #include "clib/math.h"
 
@@ -14,6 +15,7 @@ static void return_free_pages(MEMORY_BLOCK_HEADER *block);
 static MEMORY_BLOCK_HEADER *memory_join(MEMORY_BLOCK_HEADER *block);
 static MEMORY_BLOCK_HEADER *memory_split(MEMORY_BLOCK_HEADER *block, uint32_t size);
 static MEMORY_BLOCK_HEADER *create_header_at(uint32_t address, MEMORY_BLOCK_HEADER *prev, MEMORY_BLOCK_HEADER *next, uint32_t size, int state);
+static void heap_command_heapinfo(const char* argv, uint32_t argc);
 
 // Lista zawierająca wszystkie zaalokowany i puste bloki pamięci
 struct mem_list mem_list;
@@ -25,6 +27,12 @@ void heap_initialize(void)
     mem_list.head = NULL;
     mem_list.tail = NULL;
     mem_list.size = 0;
+}
+
+// Kończy inicjalizacje - wymaga by przed wywołąniem stos i powłoka były zainicjalizowane
+void heap_full_initialize(void)
+{
+    register_command("heapinfo", "Display informations about heap", heap_command_heapinfo);
 }
 
 // Alokuje obszar pamięci na size bajtów i zwraca jego adres
@@ -127,10 +135,9 @@ void debug_display_heap(void)
 {
     MEMORY_BLOCK_HEADER *current = mem_list.head;
 
-    uint8_t last_color = terminal_getcolor();
-    terminal_setcolor(VGA_COLOR_WHITE);
+    terminal_setcolor(VGA_COLOR_LIGHT_MAGENTA);
     printf("| BEGIN          | LEN            | TYPE           | FILE           | LINE\n");
-    terminal_setcolor(VGA_COLOR_LIGHT_GREY);
+    terminal_setcolor(VGA_COLOR_WHITE);
     for(uint32_t i=0; i<mem_list.size; i++)
     {
         int count = printf("| %u", (unsigned int)current);
@@ -147,7 +154,6 @@ void debug_display_heap(void)
         else count = printf("| \n");
         current = current->next_block;
     }
-    terminal_setcolor(last_color);
 }
 
 // Tworzy nagłówek bloku pamięci w danym miejscu o podanych parametrach
@@ -236,4 +242,10 @@ static void return_free_pages(MEMORY_BLOCK_HEADER *block)
         mem_list.size--;
         page_set_range(page_start, len, PAGE_FREE);
     }
+}
+
+// Komenda heapinfo
+static void heap_command_heapinfo(const char* argv, uint32_t argc)
+{
+    debug_display_heap();
 }

@@ -33,9 +33,15 @@
 // Zamienia kod naciśnięcia na kod zwolnienia klawisza
 #define RELEASED(_X) ((uint8_t)(_X) | 0x80)
 
+// Wzór słuchacz czekającego na zdarzenie
+typedef void (*kb_listener_t)(void);
+
 // Prototypy
 void keyboard_initialize(void);
 struct buffer_t *keyboard_get_buffer(void);
 void keyboard_interrupt_handler(void);
+
+void keyboard_register_listener(uint8_t scancode, int extra, kb_listener_t listener);
+void keyboard_unregister_listener(uint8_t scancode, int extra, kb_listener_t listener);
 
 #endif

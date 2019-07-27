@@ -4,6 +4,7 @@
 #include "cmos.h"
 #include "acpi.h"
 #include "heap.h"
+#include "shell.h"
 #include "clib/stdio.h"
 
 // Funkcje statyczne
@@ -14,6 +15,7 @@ static uint8_t compare_time(struct time_t *t1, struct time_t *t2);
 static inline void __get_time(struct time_t *time);
 static uint32_t calc_full_year_v1(uint8_t year);
 static uint32_t calc_full_year_v2(uint8_t year);
+static void time_command(const char* tokens, uint32_t tokens_count);
 
 // Nazwy miesięcy i dni tygodnia
 const char *months_names[12] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "Noveber", "December"};
@@ -29,6 +31,7 @@ uint8_t hour_format_24 = 0;
 // Inicjalizacja
 void time_initialize(void)
 {
+    printf("Time initialization\n");
     // Sprawdza obecność rejestru wieku
     struct FADT *fadt = (struct FADT*)find_table("FACP");
     if(fadt == NULL) century_register = 0;
@@ -38,6 +41,14 @@ void time_initialize(void)
     uint8_t status = cmos_read_register(CMOS_REGISTER_STATUS_B);
     if(status & STATUS_REGISTERB_BINARY_MODE) binary_mode = 1;
     if(status & STATUS_REGISTERB_24_HOUR_FORMAT) hour_format_24 = 1;
+
+    register_command("time", "Display current time", time_command);
+
+    printf("\n______________Current_Time______________\n");
+    struct time_t *time = NULL;
+    get_time(time);
+    time_display(time);
+    printf("\n\n");
 }
 
 // Wypełnia strukturę aktualnym czasem
@@ -152,4 +163,13 @@ static void convert_time_to_bin(struct time_t *time_bcd)
     time_bcd->day_of_month = convert_bcd_to_bin(time_bcd->day_of_month);
     time_bcd->month = convert_bcd_to_bin(time_bcd->month);
     time_bcd->year = convert_bcd_to_bin(time_bcd->year);
+}
+
+// Komenda wyświetlająca aktualny czas
+static void time_command(const char* tokens, uint32_t tokens_count)
+{
+    struct time_t time;
+    get_time(&time);
+    time_display(&time);
+    printf("\n");
 }

@@ -6,6 +6,7 @@
 #include "idt.h"
 #include "mouse.h"
 #include "ports.h"
+#include "shell.h"
 #include "clib/math.h"
 #include "clib/string.h"
 #include "clib/stdio.h"
@@ -18,6 +19,7 @@ static void terminal_putnewline(void);
 static void reprint(void);
 static void terminal_scroll_handler(void);
 static void terminal_move_up();
+static void terminal_command_clear(const char* tokens, uint32_t tokens_count);
 
 // Podstawowe zmienne terminalu
 int32_t terminal_row = 0;
@@ -49,6 +51,7 @@ void terminal_full_initialize(void)
 {
 	interrupt_register(44, terminal_scroll_handler);
 	last_wheel = get_mouse_info()->scroll_wheel;
+	register_command("clear", "Clear screen", terminal_command_clear);
 	printf("Terminal Full Initialization\n");
 }
 
@@ -67,6 +70,15 @@ void terminal_clear(void)
 	}
 
 	reprint();
+}
+
+// Drukuje tyle nowych lini, aby bierzący ekran stał się czysty
+void terminal_fake_clear(void)
+{
+	for(uint32_t i=0; i<VGA_HEIGHT; i++)
+		putchar('\n');
+
+	terminal_cursor_apply();
 }
 
 //Drukuje jeden znak, trzeba wymyśleć coś szybszego! 
@@ -267,4 +279,37 @@ void terminal_cursor_apply(void)
 		terminal_enable_cursor(CURSOR_SCANLINE_START, CURSOR_SCANLINE_END);
 
 	terminal_update_cursor(terminal_column, terminal_row - terminal_window_position);
+}
+
+// Usówa ostatnio zapisane znaki
+void terminal_undo_char(uint32_t count)
+{
+	for(uint32_t i=0; i<count; i++)
+	{
+		// Cofnięcie o jeden znak
+		if(terminal_column == 0) 
+		{
+			terminal_column = VGA_WIDTH-1;
+			terminal_row--;
+		}
+		else terminal_column--;
+
+		putchar(' ');
+
+		// Znowu cofnięcie o jeden znak
+		if(terminal_column == 0) 
+		{
+			terminal_column = VGA_WIDTH-1;
+			terminal_row--;
+		}
+		else terminal_column--;
+	}
+
+	terminal_cursor_apply();
+}
+
+// Komenda clear
+static void terminal_command_clear(const char* tokens, uint32_t tokens_count)
+{
+	terminal_fake_clear();
 }

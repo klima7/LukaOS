@@ -71,7 +71,7 @@ char buffer_get(struct buffer_t *buff)
     char c = buff->buffer[buff->read_ptr];
     (buff->read_ptr)++;
     if((buff->read_ptr)>=BUFFER_SIZE)
-        buff->write_ptr = 0;
+        buff->read_ptr = 0;
 
     return c;
 }

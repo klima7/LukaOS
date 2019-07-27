@@ -2,10 +2,12 @@
 #include <stdint.h>
 #include "clock.h"
 #include "idt.h"
+#include "shell.h"
 #include "clib/stdio.h"
 
 //Funkcje statyczne
 static void set_frequency(unsigned int f);
+static void clock_command_timesys(const char* tokens, uint32_t tokens_count);
 
 volatile unsigned long long ticks = 0;
 volatile double system_time_ms = 0;
@@ -17,6 +19,7 @@ void clock_initialize(void)
 {
     set_frequency(FREQUENCY);
     interrupt_register(32, clock_interrupt_handler);
+    register_command("timesys", "Display time in ms since system start", clock_command_timesys);
 
     printf("Clock Ticking\n");
 }
@@ -54,4 +57,13 @@ void clock_interrupt_handler(void)
 {
     system_time_ms += IRQ0_interval_ms;
     ticks += 1;
+}
+
+// Komenda timesys
+static void clock_command_timesys(const char* tokens, uint32_t tokens_count)
+{
+    terminal_setcolor(VGA_COLOR_WHITE);
+    printf("Time in ms since start: ");
+    terminal_setcolor(VGA_COLOR_LIGHT_MAGENTA);
+    printf("%ull\n", ticks);
 }

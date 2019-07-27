@@ -52,6 +52,16 @@ int strncmp(const char *str1, const char *str2, size_t size)
 	return 0;
 }
 
+// Sprawdza, czy napisy są identyczne
+int strcmp(const char *str1, const char *str2)
+{
+	uint32_t len1 = strlen(str1);
+	uint32_t len2 = strlen(str2);
+
+	if(len1 != len2) return 1;
+	return strncmp(str1, str2, len1);
+}
+
 // Dodaje do napisu dest n znaków z napisu source
 char *strncat(char *dest, const char *source, size_t n)
 {
@@ -103,4 +113,17 @@ int get_ull_len(unsigned long long val)
 		val /= 10;
 	}
 	return len;
+}
+
+// Str to ciąg kilku napisów, jeden po drugim, kończących się terminatorem, funkcja zwraca napis o numerze nr
+// Funkcja przydatna do wydobywania poszczególnych tokenów z argv
+const char *get_token(const char *str, uint32_t nr)
+{
+	for(uint32_t i=0; i<nr; i++)
+	{
+		uint32_t len = strlen(str);
+		str += len + 1;
+	}
+
+	return str;
 }

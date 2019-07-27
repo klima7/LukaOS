@@ -6,6 +6,7 @@
 #include "ps2.h"
 #include "idt.h"
 #include "sys.h"
+#include "shell.h"
 #include "terminal.h"
 #include "clib/stdio.h"
 
@@ -15,6 +16,7 @@ static void mouse_init_scroll_wheel(void);
 static void mouse_init_extra_buttons(void);
 static void mouse_set_sample_rate(uint8_t rate);
 static void mouse_send_data(uint8_t data);
+static void mouse_command_mouseinfo(const char* tokens, uint32_t tokens_count);
 
 // Aktualny stan myszki 
 // Na starcie zakładam pozycje (0,0) W wyniku tego może być ona potem ujemna
@@ -57,7 +59,9 @@ void mouse_initialize(void)
     asm("sti");
 
     interrupt_register(44, mouse_interrupt_handler);
-    printf("Mouse Ready\n");
+    register_command("mouseinfo", "Display information about mouse position and buttons", mouse_command_mouseinfo);
+
+    debug_display_mouse();
 }
 
 // Funkcja obsługująca przerwanie myszy
@@ -108,10 +112,11 @@ void mouse_interrupt_handler(void)
 // Wyświetla aktualny stan myszki
 void debug_display_mouse(void)
 {
+    terminal_setcolor(VGA_COLOR_WHITE);
     printf("L: %d | R: %d | M: %d | E1: %d | E2: %d\n", mouse_info.left_button, mouse_info.right_button, mouse_info.middle_button, mouse_info.extra_button1, mouse_info.extra_button2);
     printf("Pos X: %d\n", mouse_info.posx);
     printf("Pos Y: %d\n", mouse_info.posy);
-    printf("Pos Z: %d\n", mouse_info.scroll_wheel);
+    printf("Pos Z: %d\n\n", mouse_info.scroll_wheel);
 }
 
 // Zwraca strukture informacji o myszce
@@ -156,6 +161,12 @@ static void mouse_send_data(uint8_t data)
     ps2_write_command(COMMAND_MOUSE_PREFIX);
     ps2_write_data(data);
     ps2_read_data();
+}
+
+// Komenda mouseinfo
+static void mouse_command_mouseinfo(const char* tokens, uint32_t tokens_count)
+{
+    debug_display_mouse();
 }
 
 

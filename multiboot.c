@@ -3,8 +3,12 @@
 #include "multiboot.h"
 #include "sys.h"
 #include "terminal.h"
+#include "shell.h"
 #include "clib/stdio.h"
 #include "clib/string.h"
+
+// Funkcje statyczne
+static void multiboot_command_meminfo(const char* tokens, uint32_t tokens_count);
 
 struct multiboot_info *multiboot_info;
 
@@ -19,6 +23,14 @@ void multiboot_initialize(void)
     // Jeżeli bit jest ustawiony to mapa jest poprawna
     uint32_t flags = multiboot_info->flags;
     if((flags & (1u << 6)) == 0) kernel_panic("Memory Detection Failed\n");
+
+    multiboot_debug_report_memory();
+}
+
+// Kończy inicjalizacje - wymaga aby stos i powłoka zostały zainicjowane wcześniej
+void multiboot_full_initialize(void)
+{
+    register_command("meminfo", "Display information about memory placement", multiboot_command_meminfo);
 }
 
 // Zwraca wskaźnika na strukturę multiboot info
@@ -30,26 +42,29 @@ struct multiboot_info *multiboot_get_struct(void)
 // Wyświetla informacje o dostępnej pamięci
 void multiboot_debug_report_memory(void)
 {
-    uint8_t last_color = terminal_getcolor();
-    terminal_setcolor(VGA_COLOR_WHITE);
     unsigned int count = multiboot_info->mmap_length / sizeof(struct multiboot_mmap_entry);
     struct multiboot_mmap_entry *entry = (struct multiboot_mmap_entry *)multiboot_info->mmap_addr;
-    printf("\nMEM Begin      MEM End        MEM Type\n");
-    terminal_setcolor(VGA_COLOR_LIGHT_GREY);
+    terminal_setcolor(VGA_COLOR_LIGHT_MAGENTA);
+    printf("| MEM Begin      | MEM End        | MEM Type\n");
+    terminal_setcolor(VGA_COLOR_WHITE);
     for(unsigned int i=0; i<count; i++)
     {
-        int count = printf("%llu", entry->addr);
-        for(; count<15; count++) printf(" ");
-        count = printf("%llu", entry->addr + entry->len);
-        for(; count<15; count++) printf(" ");
+        int count = printf("| %llu", entry->addr);
+        for(; count<17; count++) printf(" ");
+        count = printf("| %llu", entry->addr + entry->len);
+        for(; count<17; count++) printf(" ");
         unsigned int type = entry->type;
-        if(type==MULTIBOOT_MEMORY_AVAILABLE) printf("Available\n");
-        else if(type==MULTIBOOT_MEMORY_RESERVED) printf("Reserved\n");
-        else if(type==MULTIBOOT_MEMORY_ACPI_RECLAIMABLE) printf("ACPI\n");
-        else if(type==MULTIBOOT_MEMORY_NVS) printf("NVS\n");
-        else if(type==MULTIBOOT_MEMORY_BADRAM) printf("Badram\n");
+        if(type==MULTIBOOT_MEMORY_AVAILABLE) printf("| Available\n");
+        else if(type==MULTIBOOT_MEMORY_RESERVED) printf("| Reserved\n");
+        else if(type==MULTIBOOT_MEMORY_ACPI_RECLAIMABLE) printf("| ACPI\n");
+        else if(type==MULTIBOOT_MEMORY_NVS) printf("| NVS\n");
+        else if(type==MULTIBOOT_MEMORY_BADRAM) printf("| Badram\n");
         entry++;
     }
-    terminal_setcolor(last_color);
 }
 
+// Komenda meminfo
+static void multiboot_command_meminfo(const char* tokens, uint32_t tokens_count)
+{
+    multiboot_debug_report_memory();
+}

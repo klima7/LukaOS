@@ -3,6 +3,7 @@
 
 // Prototypy
 void multiboot_initialize(void);
+void multiboot_full_initialize(void);
 struct multiboot_info *multiboot_get_struct(void);
 void multiboot_debug_report_memory(void);
 

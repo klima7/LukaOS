@@ -87,26 +87,6 @@ reload_CS:
    MOV   %ax, %gs
    MOV   %ax, %ss
    RET
-   
-// Zapisuje wartość do danego portu
-// Wywoływane z poziomu C - void outportb(unsigned char port, unsigned char value)
-// Uwaga! Przed odłożeniem na stos char jest rozszerzany do int!
-.global outportb
-.type outportb, @function
-outportb:
-	mov 4(%esp), %dx
-	mov 8(%esp), %al
-	out %al, %dx
-	ret
-	
-// Odczytuje wartość z podanego rejestru
-// Wywoływane z poziomu C - unsigned char inportb(unsigned char port)
-.global inportb
-.type inportb, @function
-inportb:
-	mov 4(%esp), %dx
-	in %dx, %al
-	ret
 
 // Zwraca stan licznika PIT	
 // Wywoływane z poziomu C - unsigned short read_pit_count(void)

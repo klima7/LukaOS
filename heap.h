@@ -39,6 +39,7 @@ struct mem_list
 
 // Prototypy
 void heap_initialize(void);
+void heap_full_initialize(void);
 
 void *__kmalloc(uint32_t size, const char *filename, uint32_t line);
 void *__kcalloc(uint32_t size, const char *filename, uint32_t line);
