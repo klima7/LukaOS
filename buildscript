@@ -1,0 +1,86 @@
+#!/bin/bash
+
+echo "Bootstrap Assembly"
+i686-elf-as sourcefiles/boot.s -o buildfiles/boot.o;
+i686-elf-as sourcefiles/interrupts.s -o buildfiles/interrupts.o;
+i686-elf-as sourcefiles/threads_asm.s -o buildfiles/threads_asm.o;
+i686-elf-as sourcefiles/rng_asm.s -o buildfiles/rng_asm.o;
+i686-elf-as sourcefiles/ports.s -o buildfiles/ports.o;
+
+#Kompiluje pliki w sourcefiles
+cd sourcefiles
+for file in $(find . -maxdepth 1 -type f -name "*.c")
+do
+	temp=$(echo "${file%.*}")
+	name=$(echo $temp | sed 's/^..//')
+	echo "Compilling $name"
+	i686-elf-gcc -c $name.c -o ../buildfiles/$name.o -std=gnu99 -ffreestanding -O2 -Wall -Wextra -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter
+done
+
+#Kompiluje pliki w clib
+cd clib
+for file in $(find . -maxdepth 1 -type f -name "*.c")
+do
+	temp=$(echo "${file%.*}")
+	name=$(echo $temp | sed 's/^..//')
+	echo "Compilling $name"
+	i686-elf-gcc -c $name.c -o ../../buildfiles/$name.o -std=gnu99 -ffreestanding -O2 -Wall -Wextra -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter
+done
+
+#Kompiluje pliki w programs
+cd ../programs
+for file in $(find . -maxdepth 1 -type f -name "*.c")
+do
+	temp=$(echo "${file%.*}")
+	name=$(echo $temp | sed 's/^..//')
+	echo "Compilling $name"
+	i686-elf-gcc -c $name.c -o ../../buildfiles/$name.o -std=gnu99 -ffreestanding -O2 -Wall -Wextra -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter
+done
+
+#Kompiluje pliki w network
+cd ../network
+for file in $(find . -maxdepth 1 -type f -name "*.c")
+do
+	temp=$(echo "${file%.*}")
+	name=$(echo $temp | sed 's/^..//')
+	echo "Compilling $name"
+	i686-elf-gcc -c $name.c -o ../../buildfiles/$name.o -std=gnu99 -ffreestanding -O2 -Wall -Wextra -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter
+done
+
+#Kompiluje pliki w additions
+cd ../additions
+for file in $(find . -maxdepth 1 -type f -name "*.c")
+do
+	temp=$(echo "${file%.*}")
+	name=$(echo $temp | sed 's/^..//')
+	echo "Compilling $name"
+	i686-elf-gcc -c $name.c -o ../../buildfiles/$name.o -std=gnu99 -ffreestanding -O2 -Wall -Wextra -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter
+done
+
+cd ../..
+
+#Linkuje jądro
+echo "Linking Kernel"
+i686-elf-gcc -T sourcefiles/linker.ld -o buildfiles/myos.bin -ffreestanding -O2 -nostdlib buildfiles/*.o -lgcc
+
+if grub-file --is-x86-multiboot buildfiles/myos.bin; then
+  echo multiboot confirmed
+else
+  echo the file is not multiboot
+fi
+
+echo "Creating bootable image"
+mkdir -p isodir/boot/grub
+cp buildfiles/myos.bin isodir/boot/myos.bin
+cp sourcefiles/grub.cfg isodir/boot/grub/grub.cfg
+grub-mkrescue -o buildfiles/myos.iso isodir &> buildfiles/build_log
+
+cp buildfiles/myos.bin buildfiles/myos1.bin
+cp buildfiles/myos.bin buildfiles/myos2.bin
+
+echo "Starting QEMU - receiver"
+qemu-system-i386 -show-cursor -no-kvm-irqchip -netdev socket,id=user.0,listen=:1234 -device rtl8139,netdev=user.0 -kernel buildfiles/myos1.bin&
+
+echo "Starting QEMU - transmiter"
+qemu-system-i386 -show-cursor -no-kvm-irqchip -netdev socket,id=user.1,connect=:1234 -device rtl8139,netdev=user.1 -kernel buildfiles/myos2.bin&
+
