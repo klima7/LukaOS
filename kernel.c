@@ -15,7 +15,6 @@
 #include "pic.h"
 #include "ps2.h"
 #include "threads.h"
-#include "list.h"
 #include "sys.h"
 #include "cmos.h"
 #include "time.h"
@@ -23,6 +22,16 @@
 #include "pci.h"
 #include "shell.h"
 #include "launcher.h"
+#include "network/RTL8139.h"
+#include "network/ethernet.h"
+#include "network/arp.h"
+#include "network/ipv4.h"
+#include "network/icmp.h"
+#include "network/udp.h"
+#include "network/utils.h"
+#include "network/network_ports.h"
+#include "network/network.h"
+#include "additions/talk.h"
 #include "clib/stdio.h"
 #include "clib/string.h"
 #include "clib/stdlib.h"
@@ -50,9 +59,17 @@ static void kernel_init(void)
 	threads_initialize();
 	pci_initialize();
 	time_initialize();
+	network_initialize();
+	RTL8139_initialize();
+	ports_initialize();
+	arp_initialize();
+	icmp_initialize();
 	launcher_initialize();
 	debug_display_heap();
+	
 	printf("Kernel ready\n");
+
+	talk_initialize();
 }
 
 // Kernel

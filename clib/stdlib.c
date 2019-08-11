@@ -30,6 +30,27 @@ int atoi(const char *str)
 	return sign*l;
 }
 
+// Zamienia tekst na liczbe całkowitą 64bit bez znaku
+uint64_t atoul(const char *str)
+{
+	uint64_t l=0, pow=1;
+	int len=(int)strlen(str), i=0;
+	if(str[0]=='0' && len>1) return 0;
+	for(i=0; i<(int)strlen(str); i++)
+	{
+		if(str[i]<='9' && str[i]>='0') pow*=10;
+		else break;
+	}
+	pow/=10;
+	for(i=0; i<len; i++)
+	{
+		if(str[i] < '0' || str[i] > '9') return l;
+		l+=(str[i]-'0')*pow;
+		pow/=10;
+	}
+	return l;
+}
+
 // Zamienia tekst na liczbe zmiennoprzecinkową - prosto z dante
 float atof(const char *str)
 {
@@ -59,4 +80,32 @@ float atof(const char *str)
 	int dzielnik=1;
 	for(i=0; i<p; i++) dzielnik*=10;
 	return (float)aa+(float)bb/dzielnik*(str[0]=='-'?-1:1);
+}
+
+// Zamienia tekst zawiarający liczbe w postaci szesnastkowej na liczbe 32bit bez znaku
+uint32_t xtou(const char *str)
+{
+	uint32_t l=0, pow=1;
+	int len=(int)strlen(str), i=0;
+
+	for(i=0; i<(int)strlen(str); i++)
+	{
+		if(!( (str[i] >= '0' && str[i] <= '9') || (str[i] >= 'a' && str[i] <= 'f') || (str[i] >= 'A' && str[i] <= 'F') )) break;
+		pow*=16;
+	}
+
+	pow/=16;
+
+	for(i=0; i<len; i++)
+	{
+		uint32_t val = 0;
+		if(str[i] >= '0' && str[i] <= '9') val = str[i] - '0';
+		else if(str[i] >= 'a' && str[i] <= 'f') val = str[i] - 'a' + 10;
+		else if(str[i] >= 'A' && str[i] <= 'F') val = str[i] - 'A' + 10;
+		else return l;
+
+		l+=val*pow;
+		pow/=16;
+	}
+	return l;
 }

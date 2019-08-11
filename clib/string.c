@@ -123,7 +123,28 @@ const char *get_token(const char *str, uint32_t nr)
 	{
 		uint32_t len = strlen(str);
 		str += len + 1;
+		while(*str==0) str++;
 	}
 
 	return str;
+}
+
+// Zwraca pierwsze wystąpienie znaku c w napisie str
+char *strchr(char *str, char c)
+{
+	while(*str!=0)
+	{
+		if(*str==c) return str;
+		str++;
+	}
+
+	return NULL;
+}
+
+// Funkcje kopiuje napis
+char *strcpy(char *str_to, const char *str_from)
+{
+	uint32_t len = strlen(str_from);
+	memcpy(str_to, str_from, len+1);
+	return str_to;
 }

@@ -34,5 +34,6 @@ struct time_t
 void time_initialize(void);
 void get_time(struct time_t *time);
 void time_display(struct time_t *time);
+uint32_t time_hash(void);
 
 #endif

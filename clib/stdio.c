@@ -12,13 +12,15 @@
 static int display_int(int val, int limit);
 static int display_float(double val);
 static int display_ull(unsigned long long val);
-static int display_binary(unsigned long long number, int bits);
-static int display_hex(unsigned long long number, int bits);
+
+// Zmienne wykorzystywane przez funkcje gets, znajdują się tutaj by funkcja gets_reset działała
+volatile uint32_t gets_cur_len = 0;
+volatile char *gets_str = NULL;
 
 // Pobiera max len znaków od użytkownika
-void gets(char *str, uint32_t len)
+void gets(char *gets_str, uint32_t len)
 {
-	uint32_t cur_len = 0;
+	gets_cur_len = 0;
 	struct buffer_t *keyboard_buffer = keyboard_get_buffer();
 
 	while(1)
@@ -26,32 +28,39 @@ void gets(char *str, uint32_t len)
 		if(!buffer_isempty(keyboard_buffer))
 		{
 			char c = buffer_get(keyboard_buffer);
-			//printf("[%c]", c);
 
 			// Backspace
-			if(c == '\b' && cur_len > 0) 
+			if(c == '\b' && gets_cur_len > 0) 
 			{
 				terminal_undo_char(1);
-				cur_len--;
+				gets_cur_len--;
 			}
 
 			// Enter
 			else if(c == '\n')
 			{
 				putchar('\n');
-				*(str+cur_len) = 0;
+				*(gets_str+gets_cur_len) = 0;
 				return;
 			}
 
 			// Zwykły znak
-			else if(c != '\b' && cur_len < len-1)
+			else if(c != '\b' && gets_cur_len < len-1)
 			{
 				putchar(c);
-				*(str+cur_len) = c;
-				cur_len++;
+				*(gets_str+gets_cur_len) = c;
+				gets_cur_len++;
 			}
 		}
 	}
+}
+
+// Funkcja kasuje wszystko co napisał użytkownik w funkcji gets
+void gets_reset(void)
+{
+	terminal_undo_char(gets_cur_len);
+	gets_str -= gets_cur_len;
+	gets_cur_len = 0;
 }
 
 // Symuluje wpisywanie z klawiatury przez użytkownika przekazanego tekstu
@@ -190,7 +199,7 @@ static int display_ull(unsigned long long val)
 }
 
 // Wyświetla liczbe w postaci binarnej
-static int display_binary(unsigned long long number, int bits)
+int display_binary(unsigned long long number, int bits)
 {
 	int len = 0;
 
@@ -211,7 +220,7 @@ static int display_binary(unsigned long long number, int bits)
 }
 
 // Wyświetla liczbe w postaci szesnastkowej
-static int display_hex(unsigned long long number, int bits)
+int display_hex(unsigned long long number, int bits)
 {
 	int len = 0;
 

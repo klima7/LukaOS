@@ -1,7 +1,7 @@
 #ifndef __UNI_LIST_H__
 #define __UNI_LIST_H__
 
-#define UNI_LIST(_NAME, _FIELD)\
+#define UNI_LIST_H(_NAME, _FIELD)\
 struct node_##_NAME##_t{\
 	_FIELD data;\
 	struct node_##_NAME##_t* next;\
@@ -14,6 +14,18 @@ struct list_##_NAME##_t{\
     uint32_t size;\
 };\
 \
+struct list_##_NAME##_t *list_##_NAME##_create(void);\
+void list_##_NAME##_push_back(struct list_##_NAME##_t *l, _FIELD data);\
+void list_##_NAME##_push_front(struct list_##_NAME##_t *l, _FIELD data);\
+_FIELD list_##_NAME##_pop_front(struct list_##_NAME##_t *l);\
+_FIELD list_##_NAME##_pop_back(struct list_##_NAME##_t *l);\
+_FIELD list_##_NAME##_front(struct list_##_NAME##_t *l);\
+_FIELD list_##_NAME##_back(struct list_##_NAME##_t *l);\
+_FIELD list_##_NAME##_remove_node(struct list_##_NAME##_t *l, struct node_##_NAME##_t *node);\
+struct node_##_NAME##_t* list_##_NAME##_get_node_at(struct list_##_NAME##_t *l, uint32_t pos);
+
+
+#define UNI_LIST_C(_NAME, _FIELD)\
 struct list_##_NAME##_t *list_##_NAME##_create(void)\
 {\
     struct list_##_NAME##_t *list = (struct list_##_NAME##_t*)kmalloc(sizeof(struct list_##_NAME##_t));\

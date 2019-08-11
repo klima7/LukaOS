@@ -1,6 +1,8 @@
 #ifndef __KEYBOARD_H__
 #define __KEYBOARD_H__
 
+#include "uni_list.h"
+
 // Kilka przydanych kodów skaningowych
 #define VK_EXTRA_CODE 0xE0
 #define VK_LEFT_SHIFT 0x2A
@@ -19,6 +21,7 @@
 #define VK_ARROW_RIGHT 0x4D
 #define VK_ENTER 0x1C
 #define VK_BACKSPACE 0x0E
+#define VK_ESCAPE 0x01
 
 // Możliwe opóżnienia powtarzania klawiszy
 #define DELAY_250 0x1
@@ -35,6 +38,9 @@
 
 // Wzór słuchacz czekającego na zdarzenie
 typedef void (*kb_listener_t)(void);
+
+// Lista funkcji będących słuchaczami zdarzeń
+UNI_LIST_H(kblistener, kb_listener_t)
 
 // Prototypy
 void keyboard_initialize(void);

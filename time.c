@@ -85,7 +85,7 @@ void get_time(struct time_t *time)
 // Wyświetla podaną godzinę
 void time_display(struct time_t *time)
 {
-    printf("%s, %s %u ", weekdays_names[time->weekday], months_names[time->month], time->day_of_month);
+    printf("%s, %s %u ", weekdays_names[time->weekday-1], months_names[time->month], time->day_of_month);
     if(time->hours < 10) printf("0");
     printf("%u:", time->hours);
     if(time->minutes < 10) printf("0");
@@ -93,6 +93,15 @@ void time_display(struct time_t *time)
     if(time->seconds < 10) printf("0");
     printf("%u ", time->seconds);
     printf("%u", time->year);
+}
+
+// Funkcja haszująca, przydatna do tworzenia seed
+uint32_t time_hash(void)
+{
+    struct time_t time = {0};
+    get_time(&time);
+    uint32_t hash = time.seconds * 1103515245 + time.minutes * 1904515775 + time.hours * 903515111 + time.day_of_month * 1144414545 + time.year * 4354555245 + (uint32_t)time.month * 1993599245 + (uint32_t)time.weekday * 110355;
+    return hash;
 }
 
 // Zamienia wartość zapiwaną w BCD na wartość binarną

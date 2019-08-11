@@ -10,8 +10,8 @@
 #include "uni_list.h"
 #include "clib/stdio.h"
 
-// Funkcje list_kblistener_create, list_kblistener_push_front...
-UNI_LIST(kblistener, kb_listener_t)
+// Lista funkcji będących słuchaczami zdarzeń
+UNI_LIST_C(kblistener, kb_listener_t)
 
 // Funkcje statyczne
 static int keyboard_is_printable(unsigned char c);

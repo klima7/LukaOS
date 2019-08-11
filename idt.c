@@ -66,6 +66,9 @@ void interrupt_register(uint32_t interrupt_nr, HANDLER_FUN fun)
 // Funkcja wywołuje wszystkie funkcje skojarzone z danym przerwaniem
 void interrupt_handler(uint32_t nr)
 {
+    if(nr!=32 && nr!=44 && nr!=33 && nr!=43)
+        printf("[INT %u]\n", nr);
+
     uint32_t count = handlers[nr].count;
 
     for(uint32_t i=0; i<count; i++)

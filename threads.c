@@ -2,17 +2,23 @@
 #include <stdint.h>
 #include "threads.h"
 #include "heap.h"
-#include "list.h"
 #include "idt.h"
 #include "pic.h"
 #include "clock.h"
 #include "sys.h"
+#include "uni_list.h"
 #include "clib/stdio.h"
 
+// Lista wątków
+UNI_LIST_C(threads, THREAD*)
+typedef struct list_threads_t THREADS_LIST;
+typedef struct node_threads_t THREADS_NODE;
+
+
 // Wszystkie wątki dostępne według kategorii
-LIST *waiting_threads;         
-LIST *active_threads;          
-LIST *terminated_threads;
+THREADS_LIST *waiting_threads;         
+THREADS_LIST *active_threads;          
+THREADS_LIST *terminated_threads;
 
 // Wszystke wątki dostępne według id
 THREAD *threads_ids[THREAD_MAX_COUNT] = {0};
@@ -22,9 +28,8 @@ uint32_t current_time_quantums = 0;
 
 
 // Funkcje statyczne
-static NODE *find_node_from_id(LIST *l, uint32_t id);
+static THREADS_NODE *find_node_from_id(THREADS_LIST *l, uint32_t id);
 static uint32_t allocate_thread_id(void);
-static uint32_t create_kernel_thread(void);
 static void scheduler(void);
 static void push_thread32(THREAD *t, uint32_t val);
 static void push_thread8(THREAD *t, uint8_t val);
@@ -34,16 +39,17 @@ static void next_thread(THREAD_STATE state);
 // Inicjalizauję wielokątkowość
 void threads_initialize(void)
 {
-    waiting_threads = list_create();
-    active_threads = list_create();
-    terminated_threads = list_create();
+    waiting_threads = list_threads_create();
+    active_threads = list_threads_create();
+    terminated_threads = list_threads_create();
+
 
     // Jądro ma wątek o id 0
     create_kernel_thread();
     interrupt_register(32, scheduler);
 }
 
-// Tworzy nowy wątek i zwraca jego identyfikator
+// Tworzy wątek
 uint32_t create_thread(uint32_t task_addr)
 {
     // Uzupelnia pola struktury
@@ -62,13 +68,13 @@ uint32_t create_thread(uint32_t task_addr)
     push_thread32(new_thread, (uint32_t)thread_goodbye);
 
     // Dodaje wątek do listy oczekujacych na uruchomienie
-    list_push_back(waiting_threads, new_thread);
+    list_threads_push_back(waiting_threads, new_thread);
 
     return new_thread->thread_id;
 }
 
-// Tworzy wątek jądra, nie potrzebuje ono już stosu
-static uint32_t create_kernel_thread(void)
+// Tworzy wątek jądra - bez stosu
+uint32_t create_kernel_thread(void)
 {
     // Uzupełnia pola struktury
     THREAD *new_thread = (THREAD*)kmalloc(sizeof(THREAD));
@@ -83,7 +89,7 @@ static uint32_t create_kernel_thread(void)
     threads_ids[new_thread->thread_id] = new_thread;
 
     // Dodaje wątek do listy
-    list_push_back(active_threads, new_thread);
+    list_threads_push_back(active_threads, new_thread);
 
     return new_thread->thread_id;
 }
@@ -98,23 +104,23 @@ void destroy_thread(uint32_t id)
     // Wątek nie został jeszcze uruchomiony
     if(thread->state == THREAD_WAITING_FOR_START)
     {
-        NODE *node = find_node_from_id(waiting_threads, id);
-        list_remove_node(waiting_threads, node);
+        THREADS_NODE *node = find_node_from_id(waiting_threads, id);
+        list_threads_remove_node(waiting_threads, node);
     }
 
     // Wątek jest uruchomiony
     else if(thread->state == THREAD_READY || thread->state == THREAD_RUNNING)
     {
         terminate_thread(id);
-        NODE *node = find_node_from_id(terminated_threads, id);
-        list_remove_node(terminated_threads, node);
+        THREADS_NODE *node = find_node_from_id(terminated_threads, id);
+        list_threads_remove_node(terminated_threads, node);
     }
 
     // Wątek jest zatrzymany
     else if(thread->state == THREAD_RIP)
     {
-        NODE *node = find_node_from_id(terminated_threads, id);
-        list_remove_node(terminated_threads, node);
+        THREADS_NODE *node = find_node_from_id(terminated_threads, id);
+        list_threads_remove_node(terminated_threads, node);
     }
 
     // Zwalnia pamięć
@@ -132,9 +138,9 @@ void start_thread(uint32_t id)
 {
     asm("cli");
 
-    NODE *node = find_node_from_id(waiting_threads, id);
-    THREAD *activated = list_remove_node(waiting_threads, node);
-    list_push_back(active_threads, activated);
+    THREADS_NODE *node = find_node_from_id(waiting_threads, id);
+    THREAD *activated = list_threads_remove_node(waiting_threads, node);
+    list_threads_push_back(active_threads, activated);
 
     asm("sti");
 }
@@ -145,7 +151,7 @@ void terminate_thread(uint32_t id)
     asm("cli");
 
     // Aktualnie wykonywany wątek
-    THREAD *current = list_front(active_threads);
+    THREAD *current = get_current_thread();
 
     // Jeżeli usówanym wątkiem jest wątek aktualny wykonywany
     if(current->thread_id == id)
@@ -154,10 +160,10 @@ void terminate_thread(uint32_t id)
     // Jeśli wykonuje się obecnie inny wątek
     else
     {
-        NODE *node = find_node_from_id(active_threads, id);
-        THREAD *terminated = list_remove_node(active_threads, node);
+        THREADS_NODE *node = find_node_from_id(active_threads, id);
+        THREAD *terminated = list_threads_remove_node(active_threads, node);
         terminated->state = THREAD_RIP;
-        list_push_back(terminated_threads, terminated);
+        list_threads_push_back(terminated_threads, terminated);
     }
 
     asm("sti");
@@ -191,19 +197,19 @@ static void scheduler(void)
 static void next_thread(THREAD_STATE state)
 {
     // Pobranie aktualnego wątku
-    THREAD *current = list_front(active_threads);
+    THREAD *current = get_current_thread();
     current->state = state;
 
     // Gdy obecny wątek się kończy to zmienia listę z active na dead
     if(state == THREAD_RIP) 
     {
-        THREAD *dead = list_pop_front(active_threads);
-        list_push_back(terminated_threads, dead);
+        THREAD *dead = list_threads_pop_front(active_threads);
+        list_threads_push_back(terminated_threads, dead);
     }
 
     // Umieszczenie nowego wątku na początku listy
-    THREAD *next = list_pop_back(active_threads);
-    list_push_front(active_threads, next);
+    THREAD *next = list_threads_pop_back(active_threads);
+    list_threads_push_front(active_threads, next);
 
     // Aktualizacja kwantów czasu
     current_time_quantums = next->priority;
@@ -245,13 +251,15 @@ static uint32_t allocate_thread_id(void)
             return index;
         }
     }
+
+    kernel_panic("Any Free Thread ID");
     return 0;
 }
 
 // Znajduje na podanej liście wątek o szukanym id
-static NODE *find_node_from_id(LIST *l, uint32_t id)
+static THREADS_NODE *find_node_from_id(THREADS_LIST *l, uint32_t id)
 {
-    NODE *current = l->head;
+    THREADS_NODE *current = l->head;
     while(current!=NULL)
     {
         if(current->data->thread_id == id) return current;
@@ -260,6 +268,11 @@ static NODE *find_node_from_id(LIST *l, uint32_t id)
 
     kernel_panic("Any Free Threads ID");
     return NULL;
+}
+
+THREAD *get_current_thread(void)
+{
+    return list_threads_front(active_threads);
 }
 
 // Umieszcza wartość 32 bit na stosie danego wątku

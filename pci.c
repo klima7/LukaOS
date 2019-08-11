@@ -8,6 +8,7 @@
 
 // Funkcje statyczne
 static void pci_command_devicelist(const char* tokens, uint32_t tokens_count);
+static void display_binary_funcs(uint8_t funcs);
 
 // Lista z dowiązaniami, nie zmienia się ona w czasie więc jest znacznie uproszczona
 struct pci_entry_t *devices_list = NULL;
@@ -171,6 +172,27 @@ struct pci_entry_t *scan_devices(void)
     return head;
 }
 
+// Zwraca liste wszystkich urządzeń
+struct pci_entry_t *pci_get_devices(void)
+{
+    return devices_list;
+}
+
+// Zwraca adres struktury opisującej rządane urządzenie
+struct pci_entry_t *pci_get_device_by_id(uint16_t device_id)
+{
+    struct pci_entry_t *current = devices_list;
+
+    while(current != NULL)
+    {
+        if(current->device_id == device_id)
+            return current;
+        current = current->next;
+    }
+
+    return NULL;
+}
+
 // Wyświetla liste wszystkich urządzeń o opisami
 void pci_display_devices(void)
 {
@@ -227,4 +249,25 @@ void display_binary_funcs(uint8_t funcs)
 static void pci_command_devicelist(const char* tokens, uint32_t tokens_count)
 {
     pci_display_devices();
+}
+
+// Zwraca odpowiecz na pytanie czy rejestr wskazuje na adres w pamięci czy przestrzeni io
+enum address_space_t pci_bar_get_space(uint32_t bar_register)
+{
+    if(bar_register & PCI_BAR_SPACE) return IO_SPACE;
+    else return MEMORY_SPACE;
+}
+
+// Zwraca adres wskazujący na adres w pamięci lub w przestrzeni io
+uint32_t pci_bar_get_address(uint32_t bar_register)
+{
+    uint32_t space = pci_bar_get_space(bar_register);
+
+    if(space == IO_SPACE) 
+        return bar_register & PCI_BAR_IO_ADDRESS;
+
+    else if(space == MEMORY_SPACE)
+        return bar_register & PCI_BAR_MEMORY_ADDRESS;
+
+    return 0;
 }

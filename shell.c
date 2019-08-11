@@ -10,11 +10,11 @@
 #include "buffer.h"
 #include "heap.h"
 
-// Funkcje list_command_create, list_command_destroy, list_command_push_front...
-UNI_LIST(command, struct command_entry_t)
+// Lista komend
+UNI_LIST_C(command, struct command_entry_t)
 
-// Funkcje list_texts_create, list_texts_destroy, list_texts_push_front...
-UNI_LIST(texts, char*)
+// Lista wpisywanych tekstów
+UNI_LIST_C(texts, char*)
 
 // Funkcje statyczne
 static void report_fail(void);
@@ -136,7 +136,10 @@ static uint32_t tokenize_command(char *command)
             argc++;
         }
         if(*current == '\"') 
+        {
+            *current = 0;
             quote_flag = !quote_flag;
+        }
 
         current++;
     }
@@ -208,4 +211,20 @@ static void shell_next_command(void)
     else text = list_texts_get_node_at(texts_list, texts_current)->data;
 
     simulate_typing(text);
+}
+
+// Funkcja wywoływana przed rozpoczęciem wstawki
+void shell_start_insert(void)
+{
+    gets_reset();
+    printf("\n\n");
+}
+
+// Funkcje wywoływana po zakończeniu wstawki
+void shell_end_insert(void)
+{
+    printf("\n");
+    terminal_setcolor(SHELL_ENCOURAGEMENT_COLOR);
+    printf("Enter Command >> ");
+    terminal_setcolor(SHELL_COMMAND_COLOR);
 }
