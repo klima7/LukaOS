@@ -7,12 +7,14 @@
 #include "clib/stdio.h"
 #include "clib/string.h"
 
-#define PROGRAMS_COUNT 3
+#define PROGRAMS_COUNT 5
 
 // Dołączamy wszystkie programy
 #include "programs/thread_test.h"
 #include "programs/mouse_test.h"
 #include "programs/panic_test.h"
+#include "programs/timer_test.h"
+#include "programs/sound_test.h"
 
 // Funkcje statyczne
 static void launcher_add(const char *name, program_main_t main_fun);
@@ -28,6 +30,8 @@ void launcher_initialize(void)
     launcher_add("thread_test", thread_test_main);
     launcher_add("mouse_test", mouse_test_main);
     launcher_add("panic_test", panic_test_main);
+    launcher_add("timer_test", timer_test_main);
+    launcher_add("sound_test", sound_test_main);
 
     register_command("start", "Starts given program or display all programs", launcher_command_start);
 }

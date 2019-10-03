@@ -35,6 +35,8 @@
 #include "clib/stdio.h"
 #include "clib/string.h"
 #include "clib/stdlib.h"
+#include "beeper.h"
+#include "timers.h"
 
 // Wszystkie procedury inicjujące 
 static void kernel_init(void)
@@ -65,7 +67,9 @@ static void kernel_init(void)
 	arp_initialize();
 	icmp_initialize();
 	launcher_initialize();
+	timer_initialize();
 	debug_display_heap();
+	beeper_initialize();
 	
 	printf("Kernel ready\n");
 
@@ -76,6 +80,8 @@ static void kernel_init(void)
 void kernel_main(void) 
 {
 	kernel_init();
+	beep_start(261);
+	silent();
 	shell_main();
 }
 

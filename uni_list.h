@@ -108,6 +108,8 @@ _FIELD list_##_NAME##_pop_front(struct list_##_NAME##_t *l)\
 		l->tail = NULL;\
 	}\
 \
+	l->size--;\
+\
 	kfree(poped);\
 	return data;\
 }\
@@ -128,6 +130,8 @@ _FIELD list_##_NAME##_pop_back(struct list_##_NAME##_t *l)\
 		l->tail = NULL;\
 	}\
 \
+	l->size--;\
+\
 	kfree(poped);\
 	return data;\
 }\
@@ -142,6 +146,28 @@ _FIELD list_##_NAME##_back(struct list_##_NAME##_t *l)\
 {\
 	_FIELD data = l->tail->data;\
 	return data;\
+}\
+\
+void list_##_NAME##_insert(struct list_##_NAME##_t *l, _FIELD data, uint32_t pos)\
+{\
+	if(pos<=0) list_##_NAME##_push_front(l, data);\
+	else if(pos>=l->size) list_##_NAME##_push_back(l, data);\
+	else\
+	{\
+		struct node_##_NAME##_t *current_node = l->head;\
+		for(uint32_t i=0; i<pos; i++)\
+			current_node = current_node->next;\
+\
+		struct node_##_NAME##_t *node = (struct node_##_NAME##_t*)kmalloc(sizeof(struct node_##_NAME##_t));\
+		node->data = data;\
+		node->next = current_node;\
+		node->prev = current_node->prev;\
+\
+		current_node->prev->next = node;\
+		current_node->prev = node;\
+\
+		l->size++;\
+	}\
 }\
 \
 _FIELD list_##_NAME##_remove_node(struct list_##_NAME##_t *l, struct node_##_NAME##_t *node)\
@@ -173,5 +199,7 @@ struct node_##_NAME##_t* list_##_NAME##_get_node_at(struct list_##_NAME##_t *l, 
 \
 	return current;\
 }
+
+
 
 #endif

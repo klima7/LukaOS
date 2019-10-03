@@ -10,6 +10,7 @@
 #include "clib/math.h"
 #include "clib/string.h"
 #include "clib/stdio.h"
+#include "beeper.h"
 
 //Funkcje statyczne
 static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg);
@@ -104,6 +105,8 @@ void terminal_putchar(char c)
 
 	if(c=='\n')
 		terminal_putnewline();
+	if(c=='\a')
+		beep();
 	else 
 	{
 		terminal_put_entry_at(terminal_space, c, terminal_color, terminal_column, terminal_row);

@@ -166,11 +166,11 @@ static void arp_command_askmac(const char* tokens, uint32_t tokens_count)
         return;
     }
 
-    int ok = 0;
-    uint64_t mac = arp_get_mac(ip, &ok);
+    int error = 0;
+    uint64_t mac = arp_get_mac(ip, &error);
 
     // Udało się znaleść szukany adres
-    if(ok)
+    if(!error)
     {
         printf("MAC address for given IP: ");
         terminal_setcolor(VGA_COLOR_LIGHT_MAGENTA);
@@ -199,10 +199,11 @@ static void arp_command_askip(const char* tokens, uint32_t tokens_count)
         return;
     }
 
-    uint32_t ip = arp_get_ip(mac, &ok_flag);
+    int error_flag = 0;
+    uint32_t ip = arp_get_ip(mac, &error_flag);
 
     // Udało się znaleść szukany adres
-    if(ok_flag)
+    if(!error_flag)
     {
         printf("IP address for given MAC: ");
         terminal_setcolor(VGA_COLOR_LIGHT_MAGENTA);
@@ -226,7 +227,7 @@ static void arp_command_macip(const char* tokens, uint32_t tokens_count)
     terminal_setcolor(VGA_COLOR_WHITE);
 
     struct node_macip_t *current = mac_ip_list->head;
-    for(uint32_t i=0; i<mac_ip_list->size; i++)
+    while(current != NULL)
     {
         printf("| ");
         display_mac(current->data.mac);

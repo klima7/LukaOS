@@ -316,3 +316,9 @@ void debug_display_stack(uint32_t id)
     // Pauza
     while(1) continue;
 }
+
+// Powoduje przejście do następnego wątku
+void yield(void)
+{
+    next_thread(THREAD_READY);
+}

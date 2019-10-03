@@ -52,6 +52,7 @@ void join_thread(uint32_t id);
 void debug_display_stack(uint32_t id);
 THREAD *get_thread(uint32_t id);
 THREAD *get_current_thread(void);
+void yield(void);
 
 // Funkcje zewnętrzne
 extern void switch_stacks_and_jump(uint32_t current_thread, uint32_t next_thread);
